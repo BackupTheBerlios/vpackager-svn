@@ -1,0 +1,302 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+' Holds routines for package editor
+PUBLIC proc_explode AS Process
+PUBLIC proc_package AS Process
+PUBLIC pYes AS Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+PUBLIC pNo AS Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-no.png"]
+
+PUBLIC SUB FIND_EXPLODE_COMMAND()
+  
+  DIM explodecommand AS String
+  
+  IF Exist("/usr" &/ "bin" &/ "explodepkg") THEN 
+    explodecommand = "/usr/bin/explodepkg"
+  ELSE IF Exist("/sbin" &/ "explodepkg") THEN 
+    explodecommand = "/sbin/explodepkg"
+  ELSE IF Exist("/usr" &/ "X11R6" &/ "bin" &/ "explodepkg") THEN 
+    explodecommand = "/usr/X11R6/explodepkg"
+  END IF
+  
+  IF NOT explodecommand THEN 
+  message.Error("Unable to find a way to edit packages for your distro. Please make sure you have pkgtools installed")
+  
+  FMain.Close
+  END IF
+  
+  
+END
+
+
+PUBLIC SUB SPLIT_NAME()
+  DIM NameString AS String
+  DIM sName AS String
+  DIM sVer AS String
+  DIM sArch AS String
+  DIM sTag AS String
+  DIM sFormat AS String
+  DIM iPos1 AS Integer
+  DIM ipos2 AS Integer
+  DIM ipos3 AS Integer
+  DIM iNameLen AS Integer
+  
+  IF NOT CEditPackage.sPackageName THEN 
+  message.Error("Must select a package to edit first")
+  FEditPackage.Close
+  FMain.Show
+  ELSE 
+  NameString = file.BaseName(FEditPackage.txtPackagePath.text) ' sample myapp-0.0.0-i586-1vlxx.t*z
+  iNameLen = Len(NameString)
+  ipos1 = RInStr(NameString, "-") - 1
+  sTag = Right$(NameString, (iNameLen - ipos1) - 1)
+  'message.Info(sTag)
+  
+  ipos2 = RInStr(NameString, "-", (ipos1 - 1)) '- 1
+  sArch = Mid$(Left$(NameString, ipos1), ipos2 + 1)
+  'message.Info(sArch)
+  
+  ipos3 = InStr(NameString, "-") - 1
+  sVer = Mid$(Left$(NameString, ipos2 - 1), (ipos3 + 1) + 1)
+  'message.Info(sVer)
+  
+  sName = Left(NameString, ipos3)
+  'message.Info(sname)
+  
+  CEditPackage.sAppVer = sVer
+  CEditPackage.sAppName = sName
+  CEditPackage.sPkgTag = sTag
+  CEditPackage.sPkgArch = sArch
+  CEditPackage.sPkgTargetDest = file.Dir(FEditPackage.txtPackagePath.text)
+  sFormat = file.Ext(FEditPackage.txtPackagePath.text)
+  CEditPackage.sPkgFormat = sFormat
+  CEditPackage.sPackagePath = FEditPackage.txtPackagePath.text
+  ME.PUPULATE_GLOBAL_VARIABLES()
+  END IF
+  
+END
+PUBLIC SUB PUPULATE_GLOBAL_VARIABLES()
+  
+  Global.sAPP = CEditPackage.sAppName
+  Global.sVer = CEditPackage.sAppVer
+  Global.sPkgArch = CEditPackage.sPkgArch
+  Global.spkgTag = CEditPackage.spkgTag
+  Global.sPkgType = CEditPackage.sPkgFormat
+   ME.EXPLODE_PACKAGE()
+  
+END
+
+PUBLIC SUB EXPLODE_PACKAGE(sExplodeToDir AS String, sPackagePath AS String)
+  DIM explodeline AS String
+   
+   SHELL "mkdir -p " & sExplodeToDir
+  explodeline = "cd " & sExplodeToDir & " ; explodepkg " & sPackagePath
+  
+  ' make room for the log
+    FEditPackage.taConsole.Clear
+    
+  proc_explode = SHELL explodeline FOR READ 
+  FEditPackage.tmExplodeMonitor.Enabled = TRUE
+    
+  
+END
+
+PUBLIC SUB ANALYZE_PACKAGE(sContentsLoc AS String)
+  
+  DIM sDescPath AS String
+  DIM sDesktopFilePath AS String
+  DIM sName AS String
+  DIM i AS Integer
+  DIM sDir AS String ' same as the dir from the class file
+  
+  sDir = ClsPkgEdit.sDirName
+  ' what if vpackager-test-1.0.11?
+  ' what is vpackager-1.0.11-b?
+  ' will try with rinstr
+  i = RInStr(sDir, "-")
+  sName = Left(sDir, i - 1)
+  
+  'will need to strip t the dir name to get the name of the desktop file.
+  sDescPath = sContentsLoc &/ "install" &/ "slack-desc"
+  sDesktopFilePath = sContentsLoc &/ "usr" &/ "share" &/ "applications" &/ sName & ".desktop"
+    
+  IF Exist(sDescPath) THEN 
+  CEditPackage.bHasDescription = TRUE
+  CEditPackage.sPath_To_Slack_Desc = sDescPath
+  END IF
+  IF Exist(sDesktopFilePath) THEN 
+  CEditPackage.bHasDestktopEntry = TRUE
+  CEditPackage.sPath_To_Desktop_File = sDesktopFilePath
+  END IF
+  
+  IF CEditPackage.bHasDescription = TRUE THEN 
+    FEditPackage.tlDescPresent.Visible = TRUE
+    FEditPackage.PbDescPresent.Visible = TRUE
+    FEditPackage.PbDescPresent.Picture = pYes
+        
+    FEditPackage.btEditDesc.Visible = TRUE
+    FEditPackage.btEditDesc.Enabled = TRUE
+    FEditPackage.btEditDesc.ForeColor = color.Black
+    FEditPackage.btNewDesc.Enabled = FALSE
+    FEditPackage.btNewDesc.Visible = FALSE
+    
+  ELSE 
+    FEditPackage.PbDescPresent.Visible = TRUE
+    FEditPackage.tlDescPresent.Visible = TRUE
+    FEditPackage.PbDescPresent.Picture = pNo
+    FEditPackage.btNewDesc.Enabled = TRUE
+    FEditPackage.btNewDesc.ForeColor = color.Black
+    FEditPackage.btNewDesc.visible = TRUE
+  END IF
+  IF CEditPackage.bHasDestktopEntry = TRUE THEN 
+  FEditPackage.tlDesktoFile.Visible = TRUE
+    FEditPackage.pbDesktopFilePresent.visible = TRUE
+    'FEditPackage.pbNoDesktopFile.visible = FALSE
+    FEditPackage.btEditDesktopFile.Visible = TRUE
+    FEditPackage.btEditDesktopFile.Enabled = TRUE
+    FEditPackage.btEditDesktopFile.ForeColor = color.Black
+    FEditPackage.btNewDesktopButton.Visible = FALSE
+    FEditPackage.btNewDesktopButton.Enabled = FALSE
+    ELSE 
+    FEditPackage.tlDesktoFile.Visible = TRUE
+'    FEditPackage.pbNoDesktopFile.Visible = TRUE
+    FEditPackage.pbDesktopFilePresent.Visible = FALSE
+    FEditPackage.btNewDesktopButton.Enabled = TRUE
+    FEditPackage.btNewDesktopButton.Visible = TRUE
+    FEditPackage.btNewDesktopButton.ForeColor = color.Black
+    END IF
+    
+END
+
+
+PUBLIC SUB process_read()
+  
+  DIM sOutput AS String
+  READ #LAST, sOutput, -256
+  FEditPackage.taConsole.Pos = Len(FEditPackage.taConsole.text)
+  FEditPackage.taConsole.Insert(sOutput)
+  
+END
+PUBLIC SUB proces_error(errormessage AS String)
+  
+  FEditPackage.taConsole.pos = Len(FEditPackage.taConsole.text)
+  FEditPackage.taConsole.Insert(errormessage)
+  
+END
+
+
+PUBLIC SUB WRITE_NEW_DESCRIPTION_FILE()
+  
+  FNewSlackDesc.FileDest = Global.sWorkingPath &/ "install" &/ "slack-desc"
+  Global.sAPP = CEditPackage.sAppName
+  FNewSlackDesc.bEditing = TRUE
+  
+  FNewSlackDesc.Show
+END
+
+PUBLIC SUB REPACKAGE()
+  DIM sPackageline AS String
+  sPackageline = "cd " & Global.sWorkingPath & " ; makepkg -p -l y -c n " & file.BaseName(CEditPackage.sPackageName)& 
+  "." & CEditPackage.sPkgFormat & " || echo \'Result: FAILED\'"
+  FEditPackage.tmRepackage.Enabled = TRUE
+  ME.DISABLE_EDITOR_CONTROLS()
+  proc_package = SHELL sPackageline FOR READ 
+  
+END
+
+PUBLIC SUB RELOCATE_EDITED_PACKAGE()
+  ' Moves the edited package to the same location as the original
+  
+  TRY MOVE Global.sWorkingPath &/ CEditPackage.sPackageName TO FEditPackage.txtPackagePath.Text
+  IF ERROR THEN 
+    SHELL "mv " & Global.sWorkingPath &/ CEditPackage.sPackageName & " " & FEditPackage.txtPackagePath.Text
+END IF
+  
+END
+
+
+PUBLIC SUB BACKUP_OLD_PACKAGE()
+  
+  DIM sOldPackage AS String
+  DIM sNewPackage AS String
+  
+  sOldPackage = FEditPackage.txtPackagePath.Text
+  sNewPackage = sOldPackage & ".BAK"
+  IF CEditPackage.bSaveBackupCopy = TRUE THEN 
+  TRY MOVE sOldPackage TO sNewPackage
+  IF ERROR THEN 
+    SHELL "mv " & sOldPackage & " " & sNewPackage
+  IF NOT ERROR THEN KILL sOldPackage
+  END IF
+  ELSE 
+  ' Not saving backup copy
+  FEditPackage.taConsole.pos = Len(FEditPackage.taConsole.Text)
+  FEditPackage.taConsole.Insert(gb.NewLine & gb.NewLine &
+  "WARNING: Not saving backup copy of this package. For your safety, please" & gb.NewLine &
+  "Open the Properties window in the initial screen and set click on the " & gb.NewLine & 
+  "\'Save backup copies of edited packages\' check box")
+  WAIT 5
+  END IF
+  
+  
+END
+
+PUBLIC SUB DISABLE_EDITOR_CONTROLS()
+  
+  FEditPackage.btEditDesc.Enabled = FALSE
+  FEditPackage.btEditDesc.ForeColor = color.Gray
+  FEditPackage.btEditDesktopFile.Enabled = FALSE
+  FEditPackage.btEditDesktopFile.ForeColor = color.Gray
+  FEditPackage.btNewDesc.Enabled = FALSE
+  FEditPackage.btNewDesc.ForeColor = color.Gray
+  FEditPackage.btNewDesktopButton.Enabled = FALSE
+  FEditPackage.btNewDesktopButton.ForeColor = color.Gray
+  FEditPackage.btEditDesktopFile.Enabled = FALSE
+  FEditPackage.btEditDesktopFile.ForeColor = color.Gray
+  FEditPackage.btBrowsePackage.Enabled = FALSE
+  FEditPackage.btBrowsePackage.ForeColor = color.Gray
+  FEditPackage.btRepackage.Enabled = FALSE
+  FEditPackage.btRepackage.ForeColor = color.Gray
+  FEditPackage.btExit.Enabled = FALSE
+  FEditPackage.btExit.ForeColor = color.Gray
+  
+  
+END
+  
+PUBLIC SUB ENABLE_EDITOR_CONTROLS()
+  
+   FEditPackage.btEditDesc.Enabled = TRUE
+  FEditPackage.btEditDesc.ForeColor = color.black
+  FEditPackage.btEditDesktopFile.Enabled = TRUE
+  FEditPackage.btEditDesktopFile.ForeColor = color.black
+  FEditPackage.btNewDesc.Enabled = TRUE
+  FEditPackage.btNewDesc.ForeColor = color.black
+  FEditPackage.btNewDesktopButton.Enabled = TRUE
+  FEditPackage.btNewDesktopButton.ForeColor = color.black
+  FEditPackage.btEditDesktopFile.Enabled = TRUE
+  FEditPackage.btEditDesktopFile.ForeColor = color.black
+  FEditPackage.btBrowsePackage.Enabled = TRUE
+  FEditPackage.btBrowsePackage.ForeColor = color.black
+  FEditPackage.btRepackage.Enabled = TRUE
+  FEditPackage.btRepackage.ForeColor = color.black
+  FEditPackage.btExit.Enabled = TRUE
+  FEditPackage.btExit.ForeColor = color.Black
+END
+
+

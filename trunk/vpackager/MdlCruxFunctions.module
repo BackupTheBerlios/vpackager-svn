@@ -1,0 +1,464 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+PUBLIC bAborted AS Boolean ' publically available switch to allow / deny the process to continue
+PUBLIC sBuildLog AS String
+
+PRIVATE sDirPic AS Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-open.png"]
+PRIVATE sPortPic AS Picture 'picture = Picture["Graphics/ascii.png"]
+PRIVATE sChildPic AS Image
+PUBLIC hProc AS Process
+PUBLIC bBuildingPort AS Boolean
+PUBLIC bBuildasDep AS Boolean
+PUBLIC sDepBuilding AS String
+
+
+
+PUBLIC SUB LOAD_ALL_REPOS()
+
+DIM sRepList AS String
+DIM sRepoarr AS String[]
+DIM sPortList AS String
+DIM sPortArr AS String[]
+DIM sRepo AS String
+DIM sPort AS String
+DIM i AS Integer
+DIM ii AS Integer
+DIM sPortBasePath AS String = "/usr/ports"
+DIM sSendPath AS String
+
+FrmPorts.tvPorts.Clear
+FrmPorts.taShell.Clear
+
+'sChildPic = Image.Load("Graphics/ascii.png")
+'sChildPic = sChildPic.Stretch(16, 16, 1)
+'sPortpic = sChildPic.Picture
+
+
+SHELL "ls -m " & sPortBasePath TO sRepList
+sRepoarr = Split(Trim(sRepList), ",")
+
+
+
+FOR i = 0 TO sRepoarr.count - 1
+  sRepo = sRepoarr[i]
+  sRepo = Trim(sRepo)
+  
+  sSendPath = sPortBasePath &/ sRepo
+  frmPorts.tvPorts.Add(sRepo, sRepo, sDirPic) ' Add the repo to the list
+      
+  ME.POPULATE_REPO(sSendPath, sRepo, sPortpic) ' Populate the repo
+  
+NEXT
+
+END
+PUBLIC SUB POPULATE_REPO(sPath AS String, sParent AS String, EntryIcon AS Picture)
+  
+  DIM i AS Integer
+  DIM sRawList AS String
+  DIM sList AS String[]
+  DIM sPort AS String
+  
+  SHELL "ls -m " & sPath TO sRawList
+    sList = Split(Trim(sRawList), ",")
+    FOR i = 0 TO sList.count - 1
+      sPort = Trim(sList[i]) 
+        IF InStr(sPort, ".httpup") = FALSE THEN 
+      FrmPorts.tvPorts.Add(sParent & "." & sPort, sPort, EntryIcon, sParent) ' Add the entry to the tree view
+        END IF
+          ' store this as a line in a string
+          ClsCrux.sPortRawList = ClsCrux.sPortRawList & sParent & "!" & sPort & "@"
+              ' Explanation:
+                ' The part to the left of the "!" will be the repo name
+                ' the part to the right will be the port
+                
+  NEXT 
+  FrmPorts.txtSearch.SetFocus
+END
+
+
+PUBLIC FUNCTION RUN_SEARCH(sQuery AS String)
+ 
+ ' Function is broken!!! FIXME NOW
+ 
+ DIM i AS Integer
+ DIM ii AS Integer
+ DIM sCurrHit AS String
+ DIM srawHistList AS String
+ DIM sHitList AS String[]
+ DIM sParent AS String
+ DIM sChild AS String
+ 
+ 
+ frmPorts.tvPorts.Clear
+ FrmPorts.taShell.Clear
+ 
+ ClsCrux.sMassPortArr = Split(ClsCrux.sPortRawList, "@")
+ 
+ 'IF FrmPorts.tvPorts.Count = 0 THEN 
+ IF ClsCrux.sMassPortArr.Count = 0 THEN 
+  Message.Info("Please click the \"Display Available\" button first")
+  RETURN 
+ END IF
+ 
+ ' Save the results to an array
+ FOR i = 0 TO ClsCrux.sMassPortArr.count - 1
+  sCurrHit = ClsCrux.sMassPortArr[i]
+    IF InStr(sCurrHit, sQuery, 1, gb.case) > 0 THEN 
+      srawHistList = srawHistList & sCurrHit & gb.NewLine
+    END IF
+    NEXT      
+      srawHistList = Trim(srawHistList)  
+        sHitList = Split(srawHistList, gb.NewLine)
+          FOR ii = 0 TO sHitList.Count - 1
+              sParent = Left(sHitList[ii], InStr(sHitList[ii], "!") - 1)
+                IF frmPorts.tvPorts.Exist(sParent) = FALSE THEN 
+                  FrmPorts.tvPorts.Add(sParent, sParent, sDirPic)
+                END IF
+              sChild = Right(sHitList[ii], Len(sHitList[ii]) - InStr(sHitList[ii], "!"))
+                IF FrmPorts.tvPorts.Exist(sParent & "." & sChild) = FALSE THEN 
+                  frmPorts.tvPorts.Add(sParent & "." & sChild, sChild, sPortPic, sParent)
+                END IF
+                  
+        NEXT 
+        ' Expand the trees to show the results
+          IF FrmPorts.tvPorts.Count > 0 THEN 
+              FrmPorts.tvPorts.MoveFirst()
+                REPEAT 
+                  FrmPorts.tvPorts.Item.Expanded = TRUE
+                UNTIL FrmPorts.tvPorts.MoveBelow()
+          ELSE 
+          FrmPorts.tlStatus.Text = "No matches for " & sQuery 
+            WAIT 4
+          FrmPorts.tlStatus.Text = ""
+          END IF
+          
+END
+
+PUBLIC SUB ANALIZE_PORT(sRootDir AS String, sPort AS String)
+  
+  DIM sFile AS String[]
+  DIM i AS Integer
+  DIM sLine AS String
+  DIM sRawFile AS String
+  DIM sApp AS String
+  DIM sVer AS String
+  DIM sRel AS String
+  DIM sDepList AS String
+  
+  sRawFile = File.Load(SConv(sRootDir &/ sPort &/ "Pkgfile"))
+  
+  sFile = Split(sRawFile, "\n")
+    FOR i = 0 TO sFile.count - 1
+      sLine = sFile[i]
+        IF Left(sLine, Len("name=")) = "name=" THEN 
+          sApp = Right(sLine, Len(sLine) - InStr(sLine, "="))
+        ELSE IF Left(sLine, Len("version=")) = "version=" THEN 
+          sVer = Right(sLine, Len(sLine) - InStr(sLine, "="))
+        ELSE IF Left(sline, Len("release=")) = "release=" THEN 
+          sRel = Right(sLine, Len(sLine) - InStr(sLine, "="))
+        ELSE IF Left(sLine, 1) = "#" AND InStr(sLine, "Depends") THEN 
+          sDepList = Trim(Right(sLine, Len(sLine) - InStr(sLine, ":")))
+          'Message.Info(sDepList)
+        END IF
+    NEXT 
+          
+    ClsCrux.sName = sApp
+    ClsCrux.sVersion = sVer
+    ClsCrux.sRelease = sRel
+           
+    ClsCrux.sdeps = sDepList
+    
+    
+FrmPorts.tlStatus.text = sApp & "-" & sVer & "-" & sRel    
+IF ClsCrux.sDeps <> "" THEN 
+'  ME.DEP_CHECKER(sDepList, FALSE)
+ME.DEP_CHECKER(sDepList, FALSE)
+'ClsCrux.sDeps = me.DEP_CHECKER(sDep
+END IF
+  
+   
+END
+
+PUBLIC SUB CHECK_REPO_STATUS(sRepo AS String) AS String
+  
+  DIM sEnabled AS String = "/etc/ports"
+  DIM sDisabled AS String = "/etc/ports/disabled"
+  
+  IF Exist(sEnabled &/ sRepo & ".httpup") = TRUE THEN 
+    RETURN "Enabled"
+  ELSE IF Exist(sDisabled &/ sRepo & ".httpup") = TRUE THEN 
+    RETURN "Disabled"
+  END IF
+   
+END
+
+
+PUBLIC SUB LAUNCH(sCommand AS String, bPortBuild AS Boolean, bAsDep AS Boolean, sApp AS String)
+  
+  ' clear the shell
+  
+  'FrmPorts.taShell.Insert(sCommand)
+  hProc = SHELL sCommand & " || echo \'FAILED\'" FOR READ 
+  FrmPorts.tmProcMon.Enabled = TRUE
+  ME.CHANGE_ALL_CONTROLS("Disable")
+  ME.bBuildingPort = bPortBuild
+    ME.bBuildasDep = bAsDep
+    IF bAsDep = TRUE THEN 
+      ME.sDepBuilding = sApp
+    END IF
+  ME.sBuildLog = ""
+  
+  
+END
+
+PUBLIC SUB process_read()
+  
+  DIM sLine AS String
+  READ #LAST, sLine, -256
+  WITH FrmPorts.taShell
+  .Pos = Len(FrmPorts.taShell.text)
+  .Insert(sLine)
+  END WITH 
+  
+  IF ME.bBuildasDep = TRUE THEN 
+    ME.sBuildLog = sBuildLog & sLine
+  END IF
+  
+END
+
+PUBLIC SUB Process_error(errormessage AS String)
+  
+  WITH FrmPorts.taShell
+    .Pos = Len(.text)
+    .Insert(errormessage)
+  END WITH 
+  IF ME.bBuildasDep = TRUE THEN 
+    ME.sBuildLog = sBuildLog & errormessage
+  END IF
+    
+  
+END
+
+PUBLIC SUB process_kill()
+  
+  FrmPorts.tlStatus.Text = ""
+  FrmPorts.txtSearch.Clear
+  IF FrmPorts.taShell.Text = "" THEN 
+    FrmPorts.btSaveLog.Visible = FALSE
+  ELSE 
+    FrmPorts.btSaveLog.Visible = TRUE
+  END IF
+  
+  
+END
+
+
+PUBLIC SUB UPDATE_ONE_REPO(sRepo AS String)
+  
+  ME.LAUNCH("ports -u " & sRepo, FALSE, FALSE, "")
+  
+END
+
+PUBLIC SUB RESOLVE_ROOT_DIR(sRepo AS String)
+  
+  ' needs to find the the ports root dir
+  DIM sRepFile AS String
+  DIM sFile AS String[]
+  DIM sLine AS String
+  DIM sRootDir AS String
+  DIM i AS Integer
+    
+  
+  IF Exist("/etc/ports" &/ sRepo & ".httpup") THEN
+    sRepFile = SConv(File.Load("/etc/ports" &/ sRepo & ".httpup"))
+  ELSE IF Exist("/etc/ports/disabled" &/ sRepo & ".httpup") THEN 
+    sRepFile = SConv(File.Load("/etc/ports/disabled" &/ sRepo & ".httpup"))
+  END IF
+  sFile = Split(sRepFile, gb.NewLine)
+    FOR i = 0 TO sFile.Count - 1
+      sLine = sFile[i]
+        IF Left(sLine, Len("ROOT_DIR")) = "ROOT_DIR" THEN 
+          sRootDir = Right(sLine, Len(sLine) - InStr(sLine, "="))
+        END IF
+    NEXT 
+  
+  ClsCrux.sWrkgRootDir = sRootDir
+  'Message.Info(ClsCrux.sWrkgRootDir)
+  
+END
+
+PUBLIC SUB CHANGE_ALL_CONTROLS(sAction AS String)
+  SELECT CASE sAction
+    CASE "Disable"
+      WITH FrmPorts 
+      .btBuildPort.Enabled = FALSE
+      .btBuildPort.ForeColor = Color.Gray
+      .btRefresh.Enabled = FALSE
+      .btRefresh.ForeColor = Color.Gray
+      .btLocalPorts.Enabled = FALSE
+      .btLocalPorts.ForeColor = Color.Gray
+      .btExit.Enabled = FALSE
+      .btExit.ForeColor = Color.Gray
+      .btSearch.Enabled = FALSE
+      .btSearch.ForeColor = Color.Gray
+      .txtSearch.Enabled = FALSE
+      .tvPorts.Enabled = FALSE
+      END WITH 
+    CASE "Enable"
+      WITH FrmPorts 
+      .btBuildPort.Enabled = TRUE
+      .btBuildPort.ForeColor = Color.Black
+      .btRefresh.Enabled = TRUE
+      .btRefresh.ForeColor = Color.Black
+      .btLocalPorts.Enabled = TRUE
+      .btLocalPorts.ForeColor = Color.Black
+      .btExit.Enabled = TRUE
+      .btExit.ForeColor = Color.Black
+      .btSearch.Enabled = TRUE
+      .btSearch.ForeColor = Color.Black
+      .txtSearch.Enabled = TRUE
+      .tvPorts.Enabled = TRUE
+      END WITH   
+    END SELECT 
+END
+PUBLIC SUB PROBE_PACKAGE_EXISTANCE(sRootDir AS String, sApp AS String) AS Boolean
+  DIM spackage AS String
+  DIM sResults AS String
+  DIM sFile AS String[]
+  DIM i AS Integer
+  DIM sversion AS String
+  DIM srelease AS String
+  
+  
+  'spackage = ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ ClsCrux.sName & "-" & ClsCrux.sVersion & "-i586-" & ClsCrux.sRelease & ClsCrux.stag & ".tlz"
+      ' will need to read this file again
+    sFile = Split(DConv(File.Load(sRootDir &/ sapp &/ "Pkgfile")), "\n")
+      FOR i = 0 TO sFile.Count - 1
+        IF Left(sFile[i], Len("version=")) = "version=" THEN 
+          sVersion = Trim(Right(sFile[i], Len(sFile[i]) - InStr(sFile[i], "=")))
+        ELSE IF Left(sFile[i], Len("release=")) = "release=" THEN 
+          sRelease = Trim(Right(sFile[i], Len(sFile[i]) - InStr(sFile[i], "=")))
+        END IF
+      NEXT 
+    spackage = sRootDir &/ sapp &/ sapp & "-" & sversion & "-i586-" & srelease & "vl59.tlz"
+    'Message.Info("mdlcruxfunctions.probe_pacakeg_existance " & gb.NewLine & spackage)
+  IF Exist(spackage) THEN 
+    ' Now need to probe the system for the log if installed packages
+           
+        'IF InStr(ClsGlobal.sInstalledPkgsList, ClsCrux.sName & "-" & ClsCrux.sVersion) > 1 THEN 
+          RETURN TRUE
+        ELSE 
+          RETURN FALSE
+        END IF
+  'END IF
+
+END
+
+PUBLIC FUNCTION CHECK_DEPENDANCIES_STATUS(sRawList AS String, bMessage AS Boolean) AS String
+  
+  DIM sList AS String[]
+  DIM i AS Integer
+  DIM sDep AS String
+  DIM sOutput AS String
+  DIM ii AS Integer
+  
+  'clear var
+  ClsCrux.sUnmetDeps = ""
+  'IF InStr(Trim(srawHistList, " ") > 0 OR InStr(Trim(sRawDepList, ",") > 0 THEN 
+  
+  
+END
+
+
+
+PUBLIC SUB DEP_CHECKER(sRawDepList AS String, bMessage AS Boolean) AS String
+
+DIM sList AS String[]
+DIM i AS Integer
+DIM sDep AS String
+DIM sOutput AS String
+DIM sText AS String
+DIM ii AS Integer
+DIM sSep AS String
+
+ClsCrux.sUnmetDeps = ""
+
+IF InStr(sRawDepList, ",") THEN 
+  sList = Split(sRawDepList, ",") 
+ELSE IF InStr(sRawDepList, " ") THEN 
+  sList = Split(sRawDepList, " ")
+END IF
+IF sList THEN 
+  FOR i = 0 TO sList.Count - 1
+    sDep = Trim(sList[i])
+        ' Check status of each dep here
+    SHELL "ls /var/log/packages/|grep -i ^" & Trim(sDep) & "-[0-9].[[:alnum:]]*" TO sOutput
+        
+          IF Len(sOutput) < 1 THEN 
+            sText = sText & "[ ] " & sDep & gb.NewLine
+              ClsCrux.sUnmetDeps = ClsCrux.sUnmetDeps & " " & sDep
+            ELSE 
+              sText = sText & "[i] " & sDep & gb.NewLine
+          END IF
+  
+  
+  NEXT 
+ELSE 
+sDep = Trim(sRawDepList)
+' Single dependency listed ... check for status.
+SHELL "ls /var/log/packages/|grep -i ^" & Trim(sDep) & "-[0-9].[[:alnum:]]*" TO sOutput
+         IF Len(sOutput) < 1 THEN 
+            ClsCrux.sUnmetDeps = sRawDepList ' in this case, a single dep
+            sText = sText & "[ ] " & Trim(sRawDepList)
+          ELSE 
+            sText = sText & "[i] " & Trim(sRawDepList)
+          END IF
+END IF
+
+' warn if desired
+IF bMessage = TRUE THEN 
+           IF Len(sText) > 0 THEN 
+              Message.Info("Dependancy check results for " & ClsCrux.sName & gb.NewLine & gb.NewLine & Trim(sText) & gb.NewLine &
+               gb.NewLine & "<b>" & "LEGEND:" & "</b>" & gb.NewLine &
+                "[ ] = Unmet dependancy" & gb.NewLine & "[i] = Installed dependancy")
+            ELSE 
+              Message.Error("No dependancies found for " & ClsCrux.sName & ". The author may have not listed them in the build script")
+            END IF
+        ELSE 
+        RETURN Trim(ClsCrux.sUnmetDeps)
+        END IF
+
+' Save the list of unmet dependancies
+    ClsCrux.sUnmetDeps = Trim(ClsCrux.sUnmetDeps)
+END
+
+PUBLIC SUB FLASH_STATUS_TEXT(sText AS String, iTimes AS Integer, iIntervals AS Integer, tlLocation AS TextLabel)
+  
+  DIM i AS Integer = 0
+    
+    REPEAT 
+    INC i
+      tlLocation.Text = sText
+      WAIT iIntervals
+      tlLocation.Text = ""
+      WAIT iIntervals
+    UNTIL i = iTimes
+    
+      
+  
+END

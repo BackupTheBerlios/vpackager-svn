@@ -1,0 +1,44 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC SUB apply_settings()
+'  ME.CHECK_RIGHTS()
+ 'MSettings.DISPLAY_CURRENT_SETTINGS() ' Load the settings
+ Global.sPackagerName = MSettings.READ_SETTINGS("PACKAGER_ID", Global.sMyname)
+ Global.TMP_DIR = MSettings.READ_SETTINGS("DEF_TMP_DIR", "/tmp/vpackager-builds")
+ ClsPkgEdit.sTmpWorkDir = MSettings.READ_SETTINGS("TMP_EDIT_DIR", "/tmp/vpackager-edits")
+ CSettings.bForceBuild = MSettings.READ_SETTINGS("FORCE_BUILD", "FALSE")
+ CSettings.bForeceRB = MSettings.READ_SETTINGS("FORCE_REQUIRED_BUILDER", "FALSE")
+ CSettings.bKeepWork = MSettings.READ_SETTINGS("KEEP_TMP_WORK", "FALSE")
+' Use specific location for sources?
+Csettings.bUseDefSrcLoc = Msettings.READ_SETTINGS("USE_DEF_SRC_LOC", "FALSE")
+cSettings.sDefSrcLoc = MSettings.READ_SETTINGS("DEF_SRC_LOC", "/tmp")
+
+ CEditPackage.bSaveBackupCopy = MSettings.READ_SETTINGS("BACKUP_ORIGINAL_PACKAGES", "FALSE")
+ csettings.bWriteScript = MSettings.READ_SETTINGS("GENERATE_BUILD_SCRIPT", "FALSE")
+ Global.bCopySlackDesc = MSettings.READ_SETTINGS("EXPORT_DESCRIPTION", "FALSE")
+ ClsGlobal.bRememberAttr = Msettings.READ_SETTINGS("REMEMBER_WIN_ATTR", "FALSE")
+ CSettings.sQmakePath = Msettings.READ_SETTINGS("PATH_TO_QMAKE", "")
+ 
+  IF csettings.bUseDefSrcLoc = TRUE THEN 
+  Global.sDefSrcDir = MSettings.READ_SETTINGS("DEF_SRC_LOC", "/tmp")
+  ELSE 
+  global.sDefSrcDir = user.Home
+ END IF
+END

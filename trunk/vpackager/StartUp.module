@@ -1,0 +1,74 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC SUB Main()
+  IF Application.Args.count >= 1 THEN 
+    SELECT CASE Application.Args[1]
+      CASE "--v" OR "--version" OR "-version" OR "-v"
+        PRINT Global.sMyname & " version " & Global.sMyVer & "\n \n" &
+        "Written by Moises Henriquez ( M0E.lnx@gmail.com )"
+        RETURN ' exit the application
+      CASE "--version"
+        PRINT Global.sMyname & " version " & Global.sMyVer & "\n \n" &
+        "Written by Moises Henriquez ( M0E.lnx@gmail.com )"
+        RETURN ' exit the application
+      CASE "-version"
+        PRINT Global.sMyname & " version " & Global.sMyVer & "\n \n" &
+        "Written by Moises Henriquez ( M0E.lnx@gmail.com )"
+        RETURN ' exit the application
+      CASE "-v"
+        PRINT Global.sMyname & " version " & Global.sMyVer & "\n \n" &
+        "Written by Moises Henriquez ( M0E.lnx@gmail.com )"
+        RETURN ' exit the application
+      CASE "--v"
+        PRINT Global.sMyname & " version " & Global.sMyVer & "\n \n" &
+        "Written by Moises Henriquez ( M0E.lnx@gmail.com )"
+        RETURN ' exit the application
+      CASE "" 'no argument parsed
+        
+        'ME.AUTHORIZE
+      CASE ELSE 
+        PRINT " " & Global.sMyname & "\n \n " &
+        "Unrecognized argument."
+        RETURN 
+              
+    END SELECT 
+  'ELSE 
+  
+  'ME.AUTHORIZE()
+    FMain.show() ' Changed for the 1.0.11 release
+'    FInit.Show()
+END IF
+END
+
+
+
+PUBLIC SUB AUTHORIZE()
+  
+
+IF user.name <> "root" THEN 
+Message.Error("This application requires administrator rights. Please login as root and try again")
+FMain.Close()
+ELSE 
+   FMain.Show()
+'   MBuildFromCrux.GET_ROOT_DIRS_4ALL("/etc/ports/", "/etc/ports/disabled/")
+END IF
+
+FMain.Show()  
+
+END

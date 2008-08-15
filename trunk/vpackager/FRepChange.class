@@ -1,0 +1,108 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC SUB Form_Open()
+DIM i_Enabled AS Integer
+DIM i_Disabled AS Integer
+
+i_Enabled = ME.tlEnabled.BackColor
+i_Disabled = ME.tlDisabled.BackColor
+ME.Caption = Global.sMyname & " Repository Management"
+  MRepChange.POPULATE_GRID()
+  ME.tlEnabled.BackColor = &h4C9F09
+  ME.tlDisabled.BackColor = &hDF4343
+  ME.tlDisabled.Border = Border.Plain
+  ME.tlEnabled.Border = Border.Plain
+  
+
+  'ME.tlDisabled.BackColor = i_Disabled '2392828 '13230650 'DF4343 '11184767
+
+END
+
+
+PUBLIC SUB gvRepos_Menu()
+
+  ME.MenuSelection.Popup()
+
+END
+
+PUBLIC SUB gvRepos_Click()
+
+  ' Get information on the selected field
+  
+  DIM r AS Integer
+  DIM i_Enabled AS Integer = FRepChange.tlEnabled.BackColor
+  DIM i_Disabled AS Integer = FRepChange.tlDisabled.BackColor
+  r = ME.gvRepos.row
+    CRepChange.sSelectedRepo = ME.gvRepos[r, 1].Text
+    'message.Info(CRepChange.sSelectedRepo) ' Sanity check
+    IF ME.gvRepos[r, 0].BackColor = &h4C9F09 THEN 
+      SelectionDisable.Enabled = TRUE
+      SelectionEnable.Enabled = FALSE
+      'message.Info("This repo is enabled")
+    ELSE IF ME.gvRepos[r, 0].BackColor = &hDF4343 THEN 
+    SelectionDisable.Enabled = FALSE
+    SelectionEnable.Enabled = TRUE
+      'message.Info("This repos is disabled")
+    END IF
+    
+    ME.gvRepos.Refresh()
+        
+
+END
+
+PUBLIC SUB SelectionEnable_Click()
+
+  MRepChange.REP_ENABLE()
+
+END
+
+PUBLIC SUB SelectionDisable_Click()
+
+  MRepChange.REP_DISABLE()
+  
+
+END
+
+PUBLIC SUB btQUit_Click()
+CBuildFromCrux.sEnabledList = ""
+CBuildFromCrux.sDisabledList = ""
+CBuildFromCrux.sRootDirList = ""
+'  MBuildFromCrux.GET_ROOT_DIRS_4ALL("/etc/ports/", "/etc/ports/disabled/")
+  message.Info("Dont forget to click the \'Update Ports\' button to refresh your port lists")
+  ME.Close
+  'FBuildFromCrux.show()
+  FrmPorts.Show()
+
+
+END
+
+
+PUBLIC SUB Form_Resize()
+
+  ME.gvRepos.Width = ME.clientWidth - ME.gvRepos.X
+  ME.gvRepos.Height = ME.ClientHeight - ME.tlHeader.Height - ME.tlEnabled.Height - 30
+  ME.tlEnabled.Move(ME.gvRepos.Left + 4, ME.clienth - (ME.tlEnabled.Height + 4))
+  ME.tlEnabledtl.Move(ME.gvRepos.Left + (ME.tlEnabled.W + 6), ME.tlEnabled.top + 2)    
+  ME.tlDisabled.Move(ME.gvRepos.left + ME.tlEnabledtl.X + ME.tlEnabledtl.Width + 2, ME.tlEnabled.top)
+  ME.tlDisabledTx.Move(ME.gvRepos.Left + ME.tlDisabled.X + ME.tlDisabled.Width + 2, ME.tlEnabledtl.top)
+  ME.btQUit.Move(ME.Width - (ME.btQUit.Width + 4), ME.tlDisabled.Top)
+  
+
+END

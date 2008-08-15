@@ -1,0 +1,52 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,75,53)
+  Text = ("")
+  { tlBanner TextLabel
+    MoveScaled(0,1,92,4)
+    Font = Font["+3"]
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("PACKAGE EDITOR")
+    Alignment = Align.Center
+    Border = Border.Plain
+  }
+  { tlPkgPath TextLabel
+    MoveScaled(1,6,8,3)
+    Text = ("Package")
+    Alignment = Align.Left
+  }
+  { txtPkgPath TextBox
+    MoveScaled(9,6,55,3)
+    Text = ("")
+  }
+  { btBrowse Button
+    MoveScaled(65,6,9,2)
+    Text = ("Select")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-directory.png"]
+  }
+  { HSplit1 HSplit
+    MoveScaled(1,10,73,38)
+    { frmPkgInfo Frame
+      MoveScaled(0,1,22,36)
+      Expand = True
+      Text = ("Package Composition")
+      { btDesc Button
+        MoveScaled(1,3,19,3)
+        Text = ("Description")
+      }
+      { btMenu Button
+        MoveScaled(1,7,19,3)
+        Text = ("Menu Entry")
+      }
+    }
+    { VSplit1 VSplit
+      MoveScaled(23,2,49,34)
+      { taShell TextArea
+        MoveScaled(1,0,49,33)
+        Text = ("")
+      }
+    }
+  }
+}

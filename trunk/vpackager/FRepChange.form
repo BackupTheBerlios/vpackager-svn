@@ -1,0 +1,57 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,87,52)
+  Text = ("")
+  Icon = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-preferences.png"]
+  { MenuSelection Menu
+    Text = ("Selection")
+    Visible = False
+    { SelectionEnable Menu
+      Text = ("Enable")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-add.png"]
+    }
+    { SelectionDisable Menu
+      Text = ("Disable")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-close.png"]
+    }
+  }
+  { tlHeader TextLabel
+    MoveScaled(0,1,87,7)
+    Font = Font["+2"]
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("<h2>Cruxports4slack Repository Management </h2>")
+    Alignment = Align.Center
+  }
+  { tlEnabled TextLabel
+    MoveScaled(1,48,1.4,3)
+    Font = Font["12"]
+    Background = &H4C9F09&
+    Text = ("")
+  }
+  { tlEnabledtl TextLabel
+    MoveScaled(3,48,12,3)
+    Text = ("Enabled")
+  }
+  { tlDisabled TextLabel
+    MoveScaled(16,48,1.4,3)
+    Font = Font["12"]
+    Background = &HED1414&
+    Text = ("")
+  }
+  { tlDisabledTx TextLabel
+    MoveScaled(19,48,12,3)
+    Text = ("Disabled")
+  }
+  { btQUit Button
+    MoveScaled(76,48,10,3)
+    Text = (" Done")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+  }
+  { gvRepos GridView
+    MoveScaled(0,9,86,36)
+    Mode = Select.Single
+    Header = GridView.Horizontal
+  }
+}

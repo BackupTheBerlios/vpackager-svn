@@ -1,0 +1,119 @@
+' Gambas module file
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+PUBLIC hProc AS Process ' this process will be used to explode / re-package the pacakge
+PUBLIC sLog AS String
+PUBLIC sError AS String
+
+PRIVATE pYespic AS picture = Picture["icon:/16/apply"] 'Picture["icons/16/apply.png"] ' Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+PRIVATE pNoPic AS Picture = Picture["icon:/16/cancel.png"] 'Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-no.png"]
+
+PUBLIC FUNCTION EXPLODE_PACKAGE(sPath AS String, sTarget AS String) AS Integer ' will return 0 for clear or 1 for error
+  
+  DIM bt AS Button
+  DIM sDoCmd AS String
+  
+  ' Make sure the dir exists
+  IF Exist(sTarget) = FALSE THEN 
+    TRY MKDIR sTarget
+  END IF
+    TRY MKDIR sTarget &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer
+  
+  sTarget = sTarget &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer
+  
+  'Execute the process
+  sDoCmd = "cd " & sTarget & " ; /sbin/explodepkg " & sPath
+  
+  hProc = SHELL sDoCmd & " || echo \'FAILED\'" FOR READ 
+    'make the text area visible
+    FrmPkgEditor.taShell.Visible = TRUE
+    
+    
+    WAIT 
+      IF hProc.State <> Process.Stopped THEN 
+        REPEAT 
+          WAIT 
+        UNTIL hProc.State = Process.Stopped
+      END IF
+      
+      ' Check for error now that the process is stopped
+      sError = Trim(sError)
+      
+      IF InStr(sLog, "FAILED") > 0 THEN 
+        SELECT CASE Message.Question("There was an error processing the package. \n" &
+        "Would you like to see the log?", "Yes", "No")
+          CASE 1
+            Message.Error(sError)
+            
+          CASE 2
+            'do not display
+        END SELECT 
+        RETURN 1
+      ELSE 
+        RETURN 0
+      END IF
+  
+END
+
+PUBLIC SUB ANALYZE_PACKAGE(sPath AS String)
+
+IF Exist(sPath &/ "install" &/ "slack-desc") = TRUE THEN 
+  ClsPkgEdit.bHasDesc = TRUE
+  FrmPkgEditor.btDesc.Picture = pYespic
+  
+  'FrmPkgEditor.ListView1.Add("desc", "Description", pYespic)
+  
+  
+ELSE 
+  ClsPkgEdit.bHasDesc = FALSE
+  FrmPkgEditor.btDesc.Picture = pNoPic
+  'FrmPkgEditor.ListView1.Add("desc", "Description", pNoPic)
+END IF
+IF Exist(spath &/ "usr" &/ "share" &/ "applications" &/ ClsPkgEdit.sName & ".desktop") THEN 
+  ClsPkgEdit.bHasDesktop = TRUE
+  FrmPkgEditor.btMenu.Picture = pYespic
+  'FrmPkgEditor.ListView1.Add("menu", "Menu Entry", pYespic)
+ELSE 
+  ClsPkgEdit.bHasDesktop = FALSE
+  FrmPkgEditor.btMenu.Picture = pNoPic
+  
+  'FrmPkgEditor.ListView1.Add("menu", "Menu Entry", pNoPic)
+END IF
+
+  
+  
+END
+
+
+
+PUBLIC SUB process_read()
+  
+  READ #LAST, sLog, -256
+  WITH FrmPkgEditor.taShell
+    .Pos = Len(.Text)
+    .Insert(sLog)
+  END WITH 
+  
+END
+
+PUBLIC SUB process_error(ErrorMessage AS String)
+  WITH FrmPkgEditor.taShell
+    .Pos = Len(.Text)
+    .Insert(ErrorMessage)
+  END WITH 
+  sError = sError & gb.NewLine & ErrorMessage
+END

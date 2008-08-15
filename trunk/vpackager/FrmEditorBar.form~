@@ -1,0 +1,12 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,46,4)
+  Text = ("")
+  ToolBox = True
+  { btOpen Button
+    MoveScaled(1,1,7,2)
+    Text = ("Close")
+    Picture = Picture["icon:/16/pen"]
+  }
+}

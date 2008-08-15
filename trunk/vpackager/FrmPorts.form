@@ -1,0 +1,184 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,80,60)
+  Text = ("")
+  Icon = Picture["Icons/nuoveXT-1.6/32x32/apps/tux.png"]
+  { FileMenu Menu
+    Text = ("File")
+    { FileQuit Menu
+      Text = ("Exit")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+    }
+  }
+  { ActionsMenu Menu
+    Text = ("Edit")
+    { EditPkgfile Menu
+      Text = ("Edit Build Script")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+      Shortcut = "Ctrl+M"
+    }
+    { EditRepos Menu
+      Text = ("Manage Repositories")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-sort-descending.png"]
+    }
+    { EditDesc Menu
+      Text = ("Edit Description")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+      Visible = False
+    }
+  }
+  { RepMenu Menu
+    Text = ("Repositories")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-refresh.png"]
+    Visible = False
+    { RepMenLbl Menu
+      Text = ("Repositories")
+      Enabled = False
+    }
+    { RepmenSep Menu
+      Text = ("")
+    }
+    { RepMenuUpdtAll Menu
+      Text = ("Update All")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-sort-descending.png"]
+    }
+    { RepUpdtOne Menu
+      Text = ("Update Current")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-refresh.png"]
+    }
+    { RepMenuMng Menu
+      Text = ("Enable / Disable")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-find-and-replace.png"]
+    }
+  }
+  { PrtMenu Menu
+    Text = ("PrtMenu")
+    Visible = False
+    { prtMenuLbl Menu
+      Text = ("Ports")
+      Enabled = False
+    }
+    { prtMenuSep Menu
+      Text = ("")
+      Enabled = False
+    }
+    { PrtInstall Menu
+      Text = ("Build and install")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/apps/bonobo-component-browser.png"]
+    }
+    { prtRemove Menu
+      Text = ("Uninstall")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+      Enabled = False
+    }
+    { prtUpdtMdsum Menu
+      Text = ("Update md5sum")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-refresh.png"]
+    }
+    { prtClenup Menu
+      Text = ("Clean up")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-delete.png"]
+    }
+    { prtEditPkgfile Menu
+      Text = ("Edit build script")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+    }
+    { prtViewDesc Menu
+      Text = ("View description")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dnd.png"]
+    }
+    { prtDepCheck Menu
+      Text = ("Run Dependancy Check")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-find-and-replace.png"]
+    }
+  }
+  { HSWorkArea HSplit
+    MoveScaled(1,12,78,40)
+    Expand = True
+    { tvPorts TreeView
+      MoveScaled(0,0,26,56)
+    }
+    { taShell TextArea
+      MoveScaled(26,0,51,56)
+      Text = ("")
+      ReadOnly = True
+    }
+    { tmProcMon #Timer
+      #X = 710
+      #Y = 10
+    }
+    { tmSlaptget #Timer
+      #X = 710
+      #Y = 70
+    }
+    { tmPrtDepInst #Timer
+      #X = 710
+      #Y = 140
+    }
+  }
+  { btLocalPorts Button
+    MoveScaled(1,1,14,6)
+    Text = ("Display\nAvailable")
+    Picture = Picture["Icons/nuoveXT-1.6/32x32/apps/tux.png"]
+  }
+  { txtSearch TextBox
+    MoveScaled(7,8,62,3)
+    ToolTip = ("Enter search criteria and press \"Enter\"")
+    Text = ("")
+  }
+  { btSearch Button
+    MoveScaled(71,8,7,3)
+    Text = ("Find")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-find-and-replace.png"]
+  }
+  { tlSearch TextLabel
+    MoveScaled(0,8,7,3)
+    Text = ("Search")
+    Alignment = Align.Center
+  }
+  { btRefresh Button
+    MoveScaled(15,1,14,6)
+    Text = ("Update\nPorts")
+    Picture = Picture["Icons/nuoveXT-1.6/32x32/apps/gnome-netstatus-rx.png"]
+  }
+  { btBuildPort Button
+    MoveScaled(29,1,14,6)
+    Enabled = False
+    Text = ("Build\nCurrent")
+    Picture = Picture["Icons/nuoveXT-1.6/32x32/emblems/emblem-bin.png"]
+  }
+  { tlWarning TextLabel
+    MoveScaled(48,0,31,7)
+    Visible = False
+    Text = ("")
+  }
+  { pbLamp PictureBox
+    MoveScaled(44,2,3,4)
+    Visible = False
+    Picture = Picture["Icons/nuoveXT-1.6/32x32/gtk/gtk-dialog-info.png"]
+    Stretch = True
+  }
+  { btExit Button
+    MoveScaled(71,53,7,3)
+    Text = ("Exit")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+    Cancel = True
+  }
+  { tlStatus TextLabel
+    MoveScaled(1,53,44,3)
+    Text = ("")
+  }
+  { btAbort Button
+    MoveScaled(62,53,8,3)
+    Visible = False
+    Text = ("Abort")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-stop.png"]
+  }
+  { btSaveLog Button
+    MoveScaled(49,53,12,3)
+    Visible = False
+    Text = ("Save Log")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-save-as.png"]
+  }
+}

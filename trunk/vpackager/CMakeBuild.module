@@ -1,0 +1,81 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+
+ ' This module will hold the routines for a Cmake Build
+ ' We will use the same processes as in a regular build for most of the process.
+ ' Except the configure.
+ ' syntax = cmake - DCMAKE_INSTALL_PREFIX = Dir - > - - prefix = Dir
+ '                          - DSYSCONF_INSTALL_DIR = Dir - > - - sysconfdir = Dir
+ '                          - DMAN_INSTALL_DIR = Dir - > - - mandir = Dir
+ '                          - DICON_INSTALL_DIR = Dir - > - - icondir = Dir
+ '                          - DINCLUDE_INSTALL_DIR = Dir - > - - includedir = Dir
+ '                          - DLIB_INSTALL_DIR = Dir - > - - libdir = Dir
+ '                          - DSBIN_INSTALL_DIR = Dir - > - - sbindir = Dir
+ '                          - DBIN_INSTALL_DIR = Dir - > - - bindir = Dir
+ '                          - DSHARE_INSTALL_DIR = Dir - > - - shared Dir $PREFIX / share
+ ' 
+PUBLIC SUB TRANSCODE_CONFIGURE_STRING()
+  
+  IF ConfigOptions.sInstallPrefix THEN 
+    Global.DCMAKE_INSTALL_PREFIX = ConfigOptions.sInstallPrefix
+  END IF
+  IF ConfigOptions.sSysConfDir THEN 
+  Global.DSYSCONF_INSTALL_DIR = ConfigOptions.sSysConfDir
+  END IF
+  IF ConfigOptions.sBinDir THEN 
+  Global.DBIN_INSTALL_DIR = ConfigOptions.sBinDir
+  END IF
+  IF ConfigOptions.sLibdir THEN 
+  Global.DLIB_INSTALL_DIR = ConfigOptions.sLibdir
+  END IF
+  IF ConfigOptions.sMandir THEN 
+  Global.DMAN_INSTALL_DIR = ConfigOptions.sMandir
+  END IF
+  
+  END
+
+PUBLIC SUB WRITE_CONFIGURE_STRING()
+DIM sConfigure_LINE AS String
+ME.TRANSCODE_CONFIGURE_STRING() ' Transcodes from the old gnu style to cmake friendly options
+ ' Populate the configure line
+ IF Global.DCMAKE_INSTALL_PREFIX THEN 
+ sConfigure_LINE = sConfigure_LINE & "-DCMAKE_INSTALL_PREFIX=" & Global.DCMAKE_INSTALL_PREFIX
+ END IF
+ IF Global.DSYSCONF_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DSYSCONF_INSTALL_DIR=" & Global.DSYSCONF_INSTALL_DIR
+ END IF
+ IF Global.DSBIN_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DSBIN_INSTALL_DIR=" & Global.DSBIN_INSTALL_DIR
+ END IF
+ IF GLOBAL.DLIB_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DLIB_INSTALL_DIR=" & Global.DLIB_INSTALL_DIR
+ END IF
+ IF Global.DBIN_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DBIN_INSTALL_DIR=" & Global.DBIN_INSTALL_DIR
+ END IF
+ IF Global.DINCLUDE_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DINCLUDE_INSTALL_DIR=" & Global.DINCLUDE_INSTALL_DIR
+ END IF
+ IF Global.DMAN_INSTALL_DIR THEN 
+ sConfigure_LINE = sConfigure_LINE & " -DMAN_INSTALL_DIR=" & Global.DMAN_INSTALL_DIR
+ END IF
+ ' Store the complete cmake configure string to a global variable.
+ Global.CMAKE_CONFIGURE_STRING = sConfigure_LINE
+ END 

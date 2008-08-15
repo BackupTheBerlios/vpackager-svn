@@ -1,0 +1,166 @@
+' Gambas class file
+
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PRIVATE pYespic AS picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+PRIVATE pNoPic AS Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-no.png"]
+
+
+PUBLIC SUB Form_Open()
+
+
+Balloon.Info("Click \"" & ME.btBrowse.Text & "\" to open a package for editing", ME.txtPkgPath)
+
+ME.AUTOSIZE_OBJECTS  
+
+HSplit1.Layout = "200,400"
+END
+
+PUBLIC SUB Form_Resize()
+
+  WITH ME
+    .tlBanner.Width = .ClientWidth
+    .tlBanner.Alignment = Align.Center
+    .btBrowse.Move(.ClientWidth - (.btBrowse.Width + 4), .tlPkgPath.Top)
+    '.txtPkgPath.Width = .ClientWidth - (.tlPkgPath.Width + .btBrowse.Width + 20)
+    .txtPkgPath.Move(.tlPkgPath.Left + (.tlPkgPath.Width + 4), .tlPkgPath.top, .ClientWidth - (.tlPkgPath.Width + .btBrowse.Width + 20), .tlPkgPath.height)
+'    .Listview1.Height = .frmPkgInfo.Height - 28
+  END WITH 
+
+END
+PUBLIC SUB AUTOSIZE_OBJECTS()
+  DIM iBtW AS Integer
+  
+  WITH ME
+    .tlPkgPath.Width = MdlVirtWin.get_object_width(.tlPkgPath.Text)
+    .btBrowse.Width = MdlVirtWin.get_object_width(.btBrowse.Text) + 36
+    .btDesc.Width = MdlVirtWin.get_object_width(.btDesc.Text) + 36
+    .btMenu.Width = MdlVirtWin.get_object_width(.btMenu.Text) + 36
+  IF .btDesc.Width > iBtW THEN 
+    iBtW = .btDesc.Width
+  END IF
+  IF .btMenu.Width > iBtW THEN 
+    iBtW = .btMenu.Width
+  END IF  
+  IF .btDesc.Width <> iBtW THEN 
+    .btDesc.Width = iBtW
+  END IF
+  IF .btMenu.Width <> iBtW THEN 
+    .btMenu.Width = iBtW
+  END IF
+  
+  END WITH 
+  
+  
+END
+
+
+
+PUBLIC SUB btBrowse_Click()
+
+DIM sPkgname, sApp, sVer, sArch, sBuild, sTag, sType AS String
+DIM ipos1 AS Integer
+DIM sWholeString AS String[]
+DIM i AS Integer
+
+Dialog.title = "Open package for editing ..."
+dialog.filter = ["*.tlz; *.tgz", "Binary packages"]  
+
+IF dialog.OpenFile() THEN RETURN 
+  ME.txtPkgPath.Text = dialog.Path
+  
+' Get exact information about the selected package
+  'sample = irssi-0.8.12rc1-i586-1vl59.tlz
+  'Assume the package is propperly named separated with "-"
+  stype = File.Ext(dialog.path)
+  sPkgname = File.BaseName(dialog.Path)
+  sWholeString = Split(File.basename(dialog.path), "-")
+      IF sWholeString.Count > 4 THEN 
+        'The file name has more dashes than expected... lets try to work around it
+        sTag = Right(sWholeString[sWholeString.Count - 1], Len(sWholeString[sWholeString.Count - 1]) - 1)
+        sBuild = Left(sWholeString[sWholeString.Count - 1], 1)
+        sArch = sWholeString[sWholeString.Count - 2]
+        sVer = sWholeString[sWholeString.Count - 3]
+        sApp = Left(sPkgname, InStr(sPkgname, sVer) - 2) ' use -2 because there is a "-" before the appointed position
+        'PRINT sTag
+        
+        
+      ELSE IF sWholeString.Count = 4 THEN 
+        ' perfect string
+        sTag = Right(sWholeString[3], Len(sWholeString[3]) - 1)
+        sBuild = Left(sWholeString[3], 1)
+        sArch = sWholeString[2]
+        sVer = sWholeString[1]
+        sApp = sWholeString[0]
+      ELSE IF sWholeString.Count < 4 THEN 
+        Balloon.Error("This package has an invalid name. <br>" &
+        Global.sMyname & " cannot process this package", ME.txtPkgPath)
+        STOP EVENT 
+               
+      END IF
+    
+   ClsPkgEdit.sName = sApp
+   ClsPkgEdit.sVer = sVer
+   ClsPkgEdit.sArch = sArch
+   ClsPkgEdit.sRel = sBuild
+   ClsPkgEdit.sTag = sTag
+   ClsPkgEdit.sType = stype
+   
+     PRINT "TYPE: " & ClsPkgEdit.sType & "\n" &
+        "BUILD: " & CStr(ClsPkgEdit.sRel) & "\n" & ' this is a variant... so we need to turn it into a string
+        "TAG : " & ClsPkgEdit.sTag & "\n" &
+        "ARCH: " & ClsPkgEdit.sArch & "\n" &
+        "VER : " & ClsPkgEdit.sVer & "\n" &
+        "NAME: " & ClsPkgEdit.sName
+   ' package variables are stored... now proceed to explode.
+   
+    SELECT CASE Message.Question("Would you like to open this package for editing now?", "Yes", "No")
+      CASE 1 ' yes
+        'explode the package
+        IF MdlPkgEditor.EXPLODE_PACKAGE(dialog.path, ClsPkgEdit.sTmpWorkDir) = 0 THEN 
+          MdlPkgEditor.ANALYZE_PACKAGE(ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer)
+        ELSE 
+          STOP EVENT 
+        END IF
+      CASE 2
+        Message.Info(File.Name(dialog.path) & " WILL NOT be processed")
+        STOP EVENT 
+    END SELECT 
+   
+  
+END
+
+PUBLIC SUB btDesc_Click()
+
+  IF Exist(ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer &/ "install/slack-desc") = TRUE THEN 
+    ' display the description file here
+    ME.taShell.Clear
+    ME.taShell.Text = DConv(File.Load(ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer &/ "install/slack-desc"))
+    ClsPkgEdit.sCurrentView = ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sName & "-" & ClsPkgEdit.sVer &/ "install/slack-desc"
+    ' show the tool bar
+      FrmEditorBar.Reparent(FrmPkgEditor.VSplit1, FrmPkgEditor.VSplit1.Left + 2, FrmPkgEditor.VSplit1.top + 4)
+      FrmEditorBar.Show
+    FrmPkgEditor.VSplit1.Layout = "380,60"
+    
+  ELSE 
+    ' Description is not found....
+    'Warn the user and ask to create one
+  END IF
+
+END

@@ -1,0 +1,255 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC SUB btBrowse_Click()
+DIM sDirName AS String
+DIM sPackageName AS String
+DIM i AS Integer
+DIM iSepkey AS String
+
+dialog.path = Global.sDefSrcDir
+Dialog.title = "Open package for editing ..."
+dialog.filter = ["*.tlz; *.tgz", "Binary packages"]  
+IF Dialog.OpenFile() THEN RETURN 
+ME.txtPackagePath.text = dialog.Path
+
+sPackageName = file.BaseName(ME.txtPackagePath.Text)
+  IF InStr(sPackageName, "-i586-") > 0 THEN 
+    iSepkey = "-i586-"
+  ELSE IF InStr(sPackageName, "-i686-") > 0 THEN 
+    iSepkey = "-i686-"
+  ELSE IF InStr(sPackageName, "-i486-") > 0 THEN 
+    iSepkey = "-i486-"
+  ELSE IF InStr(sPackageName, "-i386-") > 0 THEN ' this is rather old... may not get used
+    iSepkey = "-386-"
+  ELSE IF InStr(sPackageName, "-x86_64-") > 0 THEN 
+    iSepkey = "-x86-64-"
+  END IF
+i = InStr(sPackageName, iSepkey)
+sDirName = Left(sPackageName, i - 1)
+ClsPkgEdit.sDirName = sDirName
+'message.Info("Extraction path for this package will be" & gb.newline &
+'global.TMP_DIR &/ "vpackager-edits" &/ sDirName)
+    ME.btExplodit.Visible = TRUE
+
+'CEditPackage.sPackageName = file.Name(ME.txtPackagePath.text)
+'MEditPackage.SPLIT_NAME
+'ME.taConsole.Clear()
+
+END
+
+
+
+PUBLIC SUB tmExplodeMonitor_Timer()
+
+IF MEditPackage.proc_explode.state = process.stopped THEN 
+ tmExplodeMonitor.Enabled = FALSE
+ IF InStr(ME.taConsole.text, "Result: FAILED") > 0 THEN 
+  message.Error("Error: Unable to explode package, Please make sure you have pkgtools installed")
+  FMain.Close
+  ELSE 
+  PbPackageOpened.visible = TRUE
+  TlOpenPkg.visible = TRUE
+ MEditPackage.ANALYZE_PACKAGE(ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sDirName) ' Check contents of the package
+ ' Display the operation buttons
+ ME.btBrowsePackage.Visible = TRUE
+ ME.btBrowsePackage.enabled = TRUE
+ ME.btRepackage.Visible = TRUE
+ ME.btRepackage.Enabled = TRUE
+ ME.btExit.Visible = TRUE
+ ME.btExit.Enabled = TRUE
+  END IF
+  
+END IF
+END
+
+PUBLIC SUB Form_Open()
+
+ME.Center
+' make sure the tmp dir exists
+IF Exist(global.TMP_DIR) = FALSE THEN 
+  MKDIR global.TMP_DIR
+END IF
+
+
+ME.Caption = Global.sMyname & " Edit existing package"
+MEditPackage.FIND_EXPLODE_COMMAND()
+
+ME.txtPackagePath.Top = ME.btBrowse.Top
+ME.tlPackage.ToolTip = ME.btBrowse.top
+ME.tlPackage.Height = ME.btBrowse.Height
+
+
+'ME.tlOpenPkg.text = "Please click \'Browse\' to select package to be edited"
+'ME.tlOpenPkg.Visible = TRUE
+ME.taConsole.Insert("Welcome to the " & Global.sMyname & " package editor tool." & gb.newline & gb.newline &
+"This tool will allow you to:" & gb.NewLine &
+" * Add / Edit the package\'s description file " & gb.NewLine &
+" * Add / Edit the packages\'s .dekstop file (if applicable)" & gb.NewLine &
+" * Browse the package\'s contents" & gb.newline &
+" * Put the package back together" & gb.NewLine & gb.NewLine &
+"Please click the \'Browse\' button to select the package and begin editing.")  
+
+IF CEditPackage.bSaveBackupCopy = FALSE THEN 
+ FEditPackage.taConsole.pos = Len(FEditPackage.taConsole.Text)
+  FEditPackage.taConsole.Insert(gb.NewLine & gb.NewLine &
+  "WARNING: Not saving backup copy of this package. For safer operations, please" & gb.NewLine &
+  "Open the Properties window in the initial screen and set click on the " & gb.NewLine & 
+  "\'Save backup copies of edited packages\' check box")
+ 
+ ELSE 
+ ME.taConsole.Pos = Len(ME.taConsole.Text)
+ ME.taConsole.Insert(gb.NewLine & 
+ "A backup copy of the package will be created in the same directory as the original")
+  END IF
+  
+END
+
+PUBLIC SUB btEditDesc_Click()
+
+CTextEditor.bIsDescriptor = TRUE
+CTextEditor.bIsPort = FALSE
+MTextEditor.DETERMINE_FILE_TYPE
+CEditPackage.bPackageModified = TRUE
+
+END
+
+PUBLIC SUB Form_Close()
+
+SHELL "rm -rf " & Global.sWorkingPath  
+ME.Close()
+
+FMain.Show()
+
+
+END
+
+
+PUBLIC SUB btNewDesc_Click()
+CEditPackage.bPackageModified = TRUE
+CTextEditor.bIsPort = FALSE
+CTextEditor.bNewDesciptionFile = TRUE
+MEditPackage.WRITE_NEW_DESCRIPTION_FILE()  
+
+END
+
+PUBLIC SUB tmRepackage_Timer()
+
+'ME.taConsole.Clear ' Do this from another control... not a timer.
+IF MEditPackage.proc_package.state = process.Stopped THEN 
+FEditPackage.btExit.enabled = TRUE
+FEditPackage.btExit.forecolor = color.Black
+ME.tmRepackage.Enabled = FALSE
+'MEditPackage.ENABLE_EDITOR_CONTROLS()
+FEditPackage.pbPackageOpened.Visible = FALSE
+FEditPackage.pbIsNotOpen.Visible = TRUE
+FEditPackage.btExit.Enabled = TRUE
+FEditPackage.btExit.ForeColor = color.Black
+
+IF InStr(ME.taConsole.text, "Result: FAILED") > 0 THEN
+  message.Error("Error while creating the new  package")
+ELSE 
+ME.taConsole.pos = Len(ME.taConsole.text)
+ME.taConsole.Insert("Package successfully modified")
+'MEditPackage.DISABLE_EDITOR_CONTROLS()
+MEditPackage.RELOCATE_EDITED_PACKAGE() ' Relocate the edited package to the same dir as the original
+
+END IF
+ELSE 
+
+FEditPackage.btExit.enabled = FALSE
+FEditPackage.btExit.forecolor = color.Gray
+  END IF
+
+END
+
+PUBLIC SUB btRepackage_Click()
+
+
+' make a back-up copy of the old package? 
+CEditPackage.bPackageSaved = TRUE
+
+MEditPackage.BACKUP_OLD_PACKAGE()
+
+ME.taConsole.Clear
+MEditPackage.REPACKAGE()
+
+END
+
+PUBLIC SUB btExit_Click()
+
+IF CEditPackage.bPackageSaved = FALSE OR NOT CEditPackage.bPackageSaved AND CEditPackage.bPackageModified = TRUE THEN 
+  SELECT CASE message.Question("The package has been modified, but the changes have not yet been saved. " & gb.NewLine & 
+  "Exit without saving changes?", "Yes", "No")
+    CASE 1 ' Yes was clicked
+    ME.Close
+    FMain.Show
+    CASE 2 ' no was clicked
+    STOP EVENT 
+    message.Info("Click the \'Save Package\' button to save your changes")
+  END SELECT 
+ELSE 
+ME.Close
+FMain.Show
+END IF
+
+END
+
+PUBLIC SUB btBrowsePackage_Click()
+
+MBrowsePackage.OPEN_FILE_MANAGER()
+CEditPackage.bPackageModified = TRUE
+END
+
+PUBLIC SUB tmBrowseMon_Timer()
+
+  MBrowsePackage.CHECK_PROCESS_STATUS()
+
+END
+
+PUBLIC SUB btNewDesktopButton_Click()
+
+  CEditPackage.bPackageModified = TRUE
+  CTextEditor.bIsDescriptor = FALSE
+  CTextEditor.bIsPort = FALSE
+  CTextEditor.bIsDesktopFile = TRUE
+  MTextEditor.DETERMINE_FILE_TYPE()
+ 
+
+
+END
+
+PUBLIC SUB btEditDesktopFile_Click()
+
+  CEditPackage.bPackageModified = TRUE
+  CTextEditor.bIsPort = FALSE
+  MTextEditor.EDIT_DESKTOP_FILE()
+END
+
+
+PUBLIC SUB btExplodit_Click()
+ME.btExplodit.Visible = FALSE
+MEditPackage.EXPLODE_PACKAGE(ClsPkgEdit.sTmpWorkDir &/ ClsPkgEdit.sDirname, Trim(txtPackagePath.text))
+
+
+' explode the package
+  'need to know the name-version value to create temp dir and explode it there
+  
+
+END

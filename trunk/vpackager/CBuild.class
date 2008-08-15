@@ -1,0 +1,11 @@
+' Gambas class file
+
+STATIC PUBLIC sAPP AS String
+STATIC PUBLIC sVer AS String
+STATIC PUBLIC sArch AS String
+STATIC PUBLIC sRel AS String
+STATIC PUBLIC sTag AS String
+STATIC PUBLIC sType AS String
+STATIC PUBLIC sBuildOpts AS String
+STATIC PUBLIC sBuildFlags AS String
+STATIC PUBLIC sPkgDescPath AS String

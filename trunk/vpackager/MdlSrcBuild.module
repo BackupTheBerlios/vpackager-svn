@@ -1,0 +1,105 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' Holds the build process for building from source
+' One process will build everything... every step
+
+PUBLIC hproc AS Process
+PUBLIC iStepInProcedure AS Integer
+PUBLIC sSourceType AS String
+PUBLIC bAbort AS Boolean
+PUBLIC SUB RUN_SHELL(sCommand AS String)
+  
+  ' make sure the process is not running first
+  
+    IF FrmBuildView.tmProcMon.Enabled = TRUE THEN 
+      REPEAT 
+        WAIT 1
+      UNTIL 
+        FrmBuildView.tmProcMon.Enabled = FALSE
+        
+    END IF
+  hproc = SHELL sCommand & " || echo \'FAILED\'" FOR READ 
+  
+  ME.TOGGLE_BUILD_CANCEL(TRUE)
+  
+  IF FrmBuildView.tmProcMon.Enabled = FALSE THEN 
+    FrmBuildView.tmProcMon.Enabled = TRUE
+  END IF
+  
+END
+
+PUBLIC SUB TOGGLE_BUILD_CANCEL(bEnabled AS Boolean)
+  
+  IF bEnabled = TRUE THEN 
+    WITH FrmBuildView
+      .btCancel.Text = "Abort"
+      .btCancel.Enabled = TRUE
+      .btCancel.ForeColor = Color.Black
+      .btSaveLog.Enabled = FALSE
+      .btSaveLog.ForeColor = Color.Gray
+      .btNext.Enabled = FALSE
+      .btNext.ForeColor = Color.Gray
+    END WITH 
+  ELSE IF bEnabled = FALSE THEN 
+    WITH FrmBuildView
+      .btCancel.Text = "Back"
+      .btCancel.Enabled = TRUE
+      .btCancel.ForeColor = Color.Black
+      .btSaveLog.Enabled = TRUE
+      .btSaveLog.ForeColor = Color.Black
+      .btNext.Enabled = TRUE
+      .btNext.ForeColor = Color.Black
+    END WITH 
+  END IF
+  
+      
+  
+END
+
+
+
+PUBLIC SUB process_read()
+  
+  DIM sLine AS String
+    READ #LAST, sLine, -256
+    WITH FrmBuildView.taTerm
+    .Pos = Len(.Text)
+    .Insert(sLine)
+    END WITH 
+  
+END
+
+PUBLIC SUB process_error(errormessage AS String)
+  
+  WITH FrmBuildView.taTerm
+    .Pos = Len(.Text)
+    .Insert(errormessage)
+  END WITH 
+  
+END
+
+PUBLIC SUB ERROR_TEST(sMatch AS String, sInText AS String) AS Boolean
+  
+  ' This will return false for clear and true for stop
+  IF InStr(sInText, sMatch) > 0 THEN 
+    RETURN TRUE
+  ELSE 
+    RETURN FALSE
+  END IF
+  
+END

@@ -1,0 +1,50 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,82,53)
+  Text = ("")
+  Icon = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+  { FileMenu Menu
+    Text = ("File")
+    { FileSaveQuit Menu
+      Text = ("Save and Quit")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/devices/gnome-dev-harddisk.png"]
+      Shortcut = "Ctrl+S"
+    }
+    { FileSave Menu
+      Text = ("Save")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/devices/gnome-dev-harddisk.png"]
+    }
+    { FileQuit Menu
+      Text = ("Quit")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-stop.png"]
+      Shortcut = "Ctrl+Q"
+    }
+  }
+  { EditMenu Menu
+    Text = ("Edit")
+    { EditCopy Menu
+      Text = ("Copy")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-copy.png"]
+      Shortcut = "Ctrl+C"
+    }
+    { EditPaste Menu
+      Text = ("Paste")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-paste.png"]
+      Shortcut = "Ctrl+V"
+    }
+    { EditCut Menu
+      Text = ("Cut")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cut.png"]
+      Shortcut = "Ctrl+X"
+    }
+  }
+  { taStringText TextArea
+    MoveScaled(1,2,80,41)
+    Text = ("")
+  }
+  { tlStatusBar TextLabel
+    MoveScaled(1,45,80,3)
+    Text = ("")
+  }
+}

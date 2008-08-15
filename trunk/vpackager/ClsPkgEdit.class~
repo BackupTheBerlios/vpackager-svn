@@ -1,0 +1,32 @@
+' Gambas class file
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+' CLASS FILE CONTAINING THE VARIABLES FOR THE PACAKGE EDITOR
+
+STATIC PUBLIC sTmpWorkDir AS String = "/tmp/vpackager-edits"
+STATIC PUBLIC sDirName AS String
+
+STATIC PUBLIC sName AS String
+STATIC PUBLIC sVer AS String
+STATIC PUBLIC sArch AS String
+STATIC PUBLIC sRel AS Variant ' This needs to be a variant, just in case the user wants to increase the the release
+STATIC PUBLIC sTag AS String
+STATIC PUBLIC sType AS String
+
+STATIC PUBLIC bHasDesc AS Boolean
+STATIC PUBLIC bHasDesktop AS Boolean
+

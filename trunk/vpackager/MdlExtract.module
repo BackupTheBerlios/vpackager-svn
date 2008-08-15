@@ -1,0 +1,121 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC SUB EXTRACT_SRC(sSrcPath AS String)
+  DIM sShellLine AS String
+  DIM sSrcType AS String ' type of source
+  DIM bClear AS Boolean
+  
+    sShellLine = "tar xfv " & sSrcPath & " -C " & ClsGlobal.sTMP_DIR 
+    IF IsDir(ClsGlobal.sTMP_DIR) = FALSE THEN 
+      MdlMain.WRITE_TO_BUILD_LOG(Global.sMyname & " + Extracting source")
+      MKDIR ClsGlobal.sTMP_DIR
+    END IF
+    MdlSrcBuild.RUN_SHELL(sShellLine) ' starts the process
+      ' lets wait until it starts
+      WAIT 1
+        IF MdlSrcBuild.hproc.State = Process.Running THEN 
+          REPEAT 
+            WAIT 
+          UNTIL 
+        MdlSrcBuild.hproc.State = Process.Stopped
+        END IF
+        
+          
+        'MdlSrcBuild.iStepInProcedure = 1
+        FrmBuildView.PbBuildProg.Value = 0.1
+     bClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+      IF bClear = FALSE THEN 
+        ' continue to sourceguesser, and begin the dominoe effect build procedure.
+        
+        ' create the build directory
+          SHELL "mkdir -p " & ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build" WAIT 
+        sSrcType = ME.DETERMINE_SOURCE(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion)
+        
+          SELECT CASE sSrcType
+            CASE "CMAKE"
+              ' trigger the cmake configure
+              'SHELL "mkdir -p " & ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build" WAIT
+              MdlCMakeConf.CMAKE_SOURCE_CONF(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion)
+            CASE "GNU"
+              ' grigger the gnu configure
+              SHELL "mkdir -p " & ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build" WAIT
+              'MdlBuildGNU.GNU_CONFIGURE(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion)
+              MdlGnuConf.RUN_CONFIG(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build")
+            CASE "PYTHON"
+              'trigger the python build
+              MdlMain.WRITE_TO_BUILD_LOG("-+- Python source detected ... Continue")
+              MdlBuildPython.BUILD_PYTHON_SRC(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion)
+          END SELECT 
+          
+      ELSE 
+        MdlMain.WRITE_TO_BUILD_LOG(" + Error while extracting sources")
+        RETURN ' exit immediately!
+        
+      END IF
+      
+      ' Set variables for script writer
+      clsGenScript.sFileName = File.Name(ClsBuildVars.sSrcPath)
+      clsGenScript.TYPE = ClsBuildVars.sType
+END
+
+PUBLIC FUNCTION DETERMINE_SOURCE(sExtractedSrcPath AS String) AS String
+  DIM sSRCBuildLoc AS String = sExtractedSrcPath &/ "build"
+  DIM sGNUsrc AS String = "configure"
+  DIM sPythonSrc AS String = "setup.py"
+  DIM sCmakeSrc AS String = "CMakeLists.txt"
+  DIM sType AS String
+    ' This is a desperate attempt to make sure the build dir is created
+  
+'  TRY MKDIR sSRCBuildLoc
+MdlMain.WRITE_TO_BUILD_LOG(" + Determine source type")
+SHELL "mkdir -p " & sSRCBuildLoc WAIT 
+  'END IF
+  IF sExtractedSrcPath THEN 
+    IF Exist(sExtractedSrcPath &/ sCmakeSrc) = TRUE THEN 
+      sType = "CMAKE"
+      FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.Text)
+      FrmBuildView.taTerm.Insert(gb.NewLine & " + CMake sources detected... " & gb.NewLine & " + Perform configure string conversion" & gb.NewLine & gb.newline)
+    ELSE IF Exist(sExtractedSrcPath &/ sGNUsrc) = TRUE THEN 
+      sType = "GNU"
+      FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.Text)
+      FrmBuildView.taTerm.Insert(gb.NewLine & " + Assuming GNU style build procedure" & gb.NewLine & gb.NewLine)
+   ELSE IF Exist(sExtractedSrcPath &/ sPythonSrc) = TRUE THEN 
+      sType = "PYTHON"
+      FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.Text)
+      FrmBuildView.taTerm.Insert(gb.NewLine & " + Python sources detected. " & gb.NewLine & " + Perform configure string conversion" & gb.NewLine & gb.newline)
+   ELSE ' unrecognized source type
+      MdlMain.WRITE_TO_BUILD_LOG(" ~ vpackager is unable to recognize the nature of this source package ~" & gb.newline &
+                                  "Aborting build process now." & gb.NewLine &
+                                  "FAILED")
+      Message.Error("vpackager is unable to determine the type of source contained in " & gb.NewLine & 
+      ClsBuildVars.sSrcPath & gb.NewLine &
+      "Aborting build process now")
+      RETURN 
+      ' maybe add a function to let the user specify the build procedure
+        ' this would be very hard, because of the step separation in the process.
+        
+      
+      
+  END IF
+  'MdlMain.WRITE_TO_BUILD_LOG(" Found " & stype)
+  RETURN sType
+  ELSE 
+  MdlMain.WRITE_TO_BUILD_LOG(" Path to extracted source not provided. Unable to determine source type. " & gb.NewLine & "FAILED")
+  END IF
+END

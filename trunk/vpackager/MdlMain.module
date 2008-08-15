@@ -1,0 +1,88 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+PUBLIC frmTmpOpts AS Form
+
+PUBLIC taOptions AS TextArea
+PUBLIC btdone AS Button
+
+
+PUBLIC FUNCTION DISPLAY_CONFIGURE_OPTIONGS(sTarballPath AS String)
+  'This function needs to untar the provided tarball and take a look inside to find the available configure options
+    
+  DIM sRawOptions AS String
+  
+  'DIM taOptions AS TextArea
+  'DIM btDone AS Button
+  
+  SHELL " cd " & ClsGlobal.sTMP_DIR & " ; tar xf " & sTarballPath & " ; cd " & ClsBuildVars.sName &
+  "-" & ClsBuildVars.sVersion & " ; ./configure --help" TO sRawOptions
+  'message.Info(sRawOptions)
+  
+  ' Create a virtual form
+  frmTmpOpts = NEW Form
+  WITH frmTmpOpts
+  .Width = 600
+  .Height = 400
+  .caption = "Available Configure Options for " & ClsBuildVars.sName & "-" & ClsBuildVars.sVersion
+  .border = window.fixed
+    
+  END WITH 
+  taOptions = NEW TextArea(frmTmpOpts)
+  WITH taOptions
+  .ReadOnly = TRUE
+  '.border = border.Plain
+  .X = frmTmpOpts.X + 2
+  .y = frmTmpOpts.Y + 8
+  .Height = frmTmpOpts.Height - 38
+  .Width = frmTmpOpts.Width - 4
+  .text = sRawOptions
+  END WITH 
+  btDone = NEW button(frmTmpOpts) AS "BtnClose"
+  WITH btDone
+  .text = "Done"
+  .Height = 21
+  .Width = 65
+  .picture = picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-stop.png"]
+  .X = taOptions.left + (taOptions.Width - btdone.Width) - 2 ' far right
+  .y = taOptions.top + taOptions.Height + 4 ' down bottom
+  .Visible = TRUE
+  
+  END WITH 
+  
+  frmTmpOpts.Show
+END
+
+PUBLIC SUB BtnClose_click()
+frmTmpOpts.close
+END 
+
+PUBLIC FUNCTION WRITE_TO_BUILD_LOG(sMessage AS String)
+  
+  FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.text)
+  FrmBuildView.taTerm.Insert(gb.NewLine & "**** " & sMessage & " ****" & gb.NewLine)
+  
+END
+
+PUBLIC FUNCTION CHECK_LOG_FOR_ERRORS(sBuffer AS String, sMatch AS String) AS Integer
+  
+  IF InStr(sBuffer, sMatch) > 0 THEN 
+    RETURN 1 ' Error found
+  ELSE 
+    RETURN 0
+  END IF
+END
+

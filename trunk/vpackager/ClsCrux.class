@@ -1,0 +1,38 @@
+' Gambas class file
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' This class will contain the variables for the crux builder
+
+STATIC PUBLIC sPortRawList AS String
+STATIC PUBLIC sMassPortArr AS String[]
+STATIC PUBLIC sRepRawList AS String
+STATIC PUBLIC sRepMassArr AS String[]
+
+STATIC PUBLIC sWrkgRootDir AS String
+STATIC PUBLIC sName AS String
+STATIC PUBLIC sVersion AS String
+STATIC PUBLIC sRelease AS String
+STATIC PUBLIC sTag AS String = "vl59" ' Tag from the details window
+STATIC PUBLIC binstall AS Boolean ' Install package?
+STATIC PUBLIC bResDeps AS Boolean ' Resolve deps?
+
+STATIC PUBLIC sDeps AS String
+STATIC PUBLIC sDeparr AS String[]
+STATIC PUBLIC sUnmetDeps AS String ' List of unmet dependancies
+STATIC PUBLIC sToPortDeps AS String
+
+STATIC PUBLIC sUnavailDeps AS String ' list of dependancies that cannot be found via slapt-get or ports... last list.. after this, the user will be warned about missing deps.
+

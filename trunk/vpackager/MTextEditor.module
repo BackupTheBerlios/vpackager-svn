@@ -1,0 +1,116 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+' Routines for text editor
+PUBLIC SUB DETERMINE_FILE_TYPE()
+  
+  IF CTextEditor.bIsDescriptor = TRUE THEN 
+    CTextEditor.FileDestPath = CEditPackage.sPath_To_Slack_Desc
+    ME.EDIT_DESCRIPTION_FILE()
+  ELSE IF CTextEditor.bIsDesktopFile = TRUE THEN 
+  CEditPackage.sPath_To_Desktop_File = Global.sWorkingPath &/ "usr" &/ "share" &/ "applications" &/ CEditPackage.sAppName & ".desktop"
+  SHELL "mkdir -p " & file.Dir(CEditPackage.sPath_To_Desktop_File)
+    CTextEditor.FileDestPath = CEditPackage.sPath_To_Desktop_File
+    ME.NEW_DESKTOP_FILE
+    END IF
+  
+END
+
+PUBLIC SUB EDIT_DESCRIPTION_FILE()
+  
+  
+  IF CTextEditor.bIsDescriptor = TRUE THEN 
+  
+  ' Use the built-in slack-desc editor to help format the file right
+  'ELSE 
+  FEditPackage.Hide
+  FTextEditor.Show
+  FTextEditor.taStringText.text = file.Load(DConv$(CEditPackage.sPath_To_Slack_Desc))
+  FTextEditor.sOldFileCOnt = file.Load(DConv$(CEditPackage.sPath_To_Slack_Desc))
+  END IF
+   
+END
+
+PUBLIC SUB EDIT_DESKTOP_FILE()
+  CTextEditor.bIsDesktopFile = TRUE
+  FTextEditor.taStringText.Text = File.Load(DConv$(CEditPackage.sPath_To_Desktop_File))
+  FTextEditor.sOldFileCOnt = File.Load(DConv$(CEditPackage.sPath_To_Desktop_File))
+  FEditPackage.Hide
+  FTextEditor.Show
+  
+END
+
+PUBLIC SUB NEW_DESKTOP_FILE()
+  
+  FTextEditor.sOldFileCOnt = ""
+  'CTextEditor.FileDestPath = CEditPackage.sPath_To_Desktop_File
+  'SHELL "touch " & CEditPackage.sPath_To_Desktop_File
+  FEditPackage.Hide
+  FTextEditor.Show
+  
+END
+
+
+
+PUBLIC SUB UPDATE_STATUS_BAR()
+  
+  DIM iLineLen AS Integer
+  DIM sCurrentLine AS String
+  DIM iCurrentLineNumber AS Integer ' Current line Number
+  DIM iCurrentPosNumber AS Integer ' Current Position in the line
+  DIM iTotalLines AS Integer ' total number of lines
+  DIM sTextAfterColon AS String ' the text after the : in a description file
+  DIM iLenAfterColon AS Integer ' count the characters after the colon
+  DIM sFirstChar AS String ' Determine the first character of each line
+  DIM iAppNameLen AS Integer ' Lenght of the app name
+  
+  
+  iTotalLines = FTextEditor.taStringText.ToLine(FTextEditor.taStringText.Length) + 1
+  iCurrentLineNumber = FTextEditor.taStringText.Line + 1 
+  iCurrentPosNumber = FTextEditor.taStringText.Column + 1
+  iLineLen = FTextEditor.taStringText.ToPos(FTextEditor.taStringText.Line + 1, 0) - FTextEditor.taStringText.ToPos(FTextEditor.taStringText.Line, 0) - 1
+  sCurrentLine = Mid$(FTextEditor.taStringText.Text, FTextEditor.taStringText.ToPos(FTextEditor.taStringText.Line, 0) + 1, iLineLen)
+  sFirstChar = Left$(sCurrentLine)
+  ' The following only applies in case of a description file being edited
+    IF CTextEditor.bIsDescriptor = TRUE THEN 
+    sTextAfterColon = Mid$(sCurrentLine, InStr(sCurrentLine, ":") + 1)
+    
+    iAppNameLen = Len(CEditPackage.sAppName) ' (Len(sCurrentLine) - iLenAfterColon) - 1
+    iLenAfterColon = (Len(sCurrentLine) - iAppNameLen) + 1
+    
+    FTextEditor.tlStatusBar.text = "Line: " & (FTextEditor.taStringText.Line + 1) & " Position: " & FTextEditor.taStringText.Column
+    
+      IF iLenAfterColon >= 72 THEN 
+      FTextEditor.tlStatusBar.text = "WARNING: Current line is " & (iLenAfterColon - 72) & " characters over the limit"
+      END IF
+                 
+  IF sFirstChar LIKE "#*" THEN 
+    FTextEditor.tlStatusBar.text = "Comment line. This line is ignored by pkgtools"
+    ELSE IF InStr(sCurrentLine, "|-*handy-ruler-*|") > 0 THEN 
+      FTextEditor.tlStatusBar.text = "Ruler Line. Outlines the ideal structure for this file"
+  END IF
+  
+  ELSE 
+  
+  FTextEditor.tlStatusBar.text = "Line: " & (FTextEditor.taStringText.Line + 1) & " Position: " & FTextEditor.taStringText.Column
+  
+  END IF
+  
+  
+END

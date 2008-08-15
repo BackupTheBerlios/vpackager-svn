@@ -1,0 +1,161 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+' The file destination paths are preset when the button is clicked and this form is opened
+' CTextEditor.FileDestPath
+' 
+STATIC PUBLIC sOldFileCOnt AS String
+STATIC PUBLIC sNewFileCont AS String
+PUBLIC fGOtoForm AS Form
+PUBLIC sFilePath AS String ' path to the file to open.
+PUBLIC sUnchanged AS String ' original file contents
+
+PUBLIC SUB FileSave_Click()
+'MEditPackage.ANALYZE_PACKAGE()
+  'File.Save(CTextEditor.FileDestPath, SConv$(ME.taStringText.text))
+  File.Save(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ "Pkgfile", SConv(ME.taStringText.Text))
+
+END
+
+PUBLIC SUB TRACK_CHANGES()
+  sNewFileCont = ME.taStringText.Text
+  IF sUnchanged <> sNewFileCont THEN 
+SELECT CASE message.Question("This file has been modified. Would you like to save changes before exiting?", "Yes", "No")
+  CASE 1 ' user chose to save it
+ ME.FileSave_Click()
+  CASE 2 ' dont save.. just exit
+    ME.Close
+    fGOtoForm.Show()
+END SELECT 
+  
+END IF  
+ ' ' ' IF CTextEditor.bIsPort = TRUE THEN 
+ ' ' ' ME.Close
+ ' ' ' FBuildFromCrux.Show()
+ ' ' ' ELSE IF CTextEditor.bIsDescriptor OR CTextEditor.bIsDesktopFile THEN 
+ ' ' ' ME.Close
+ ' ' ' FEditPackage.Show
+ ' ' ' END IF
+' END IF
+END
+
+
+PUBLIC SUB FileQuit_Click()
+
+'ME.TRACK_CHANGES()
+'ME.Form_Close()
+ME.Close
+fGOtoForm.Show
+
+END
+
+PUBLIC SUB taStringText_KeyRelease()
+sNewFileCont = ME.taStringText.Text
+MTextEditor.UPDATE_STATUS_BAR()
+
+END
+
+PUBLIC SUB TMP_EDITOR_GO(sFilePath AS String, fRetForm AS form)
+  
+  ME.fGOtoForm = fRetForm
+  ME.sFilePath = sFilePath
+  ME.taStringText.Text = DConv(File.Load(sFilePath))
+  ME.sUnchanged = SConv(ME.taStringText.Text)
+  ME.Show()
+  
+END
+
+
+
+PUBLIC SUB Form_Open()
+'fGOtoForm = fPrevform.Name ' set the form to return to
+
+sOldFileCOnt = ME.taStringText.Text
+ME.Caption = Global.sMyname & " Text editor"
+  MTextEditor.UPDATE_STATUS_BAR()
+
+END
+
+
+
+PUBLIC SUB taStringText_Cursor()
+
+  MTextEditor.UPDATE_STATUS_BAR()
+
+END
+
+PUBLIC SUB FileSaveQuit_Click()
+
+  ME.FileSave_Click()
+  ME.FileQuit_Click()
+
+END
+
+PUBLIC SUB EditCut_Click()
+
+  ME.taStringText.Cut
+
+END
+
+PUBLIC SUB EditCopy_Click()
+
+  ME.taStringText.Copy
+
+END
+
+PUBLIC SUB EditPaste_Click()
+
+  ME.taStringText.Paste
+
+END
+
+PUBLIC SUB Form_Resize()
+
+  ME.taStringText.Width = ME.Width - 10
+  'ME.taStringText.Height = ME.Height - (ME.tlStatusBar.Height + 10)
+  ME.taStringText.Height = ME.Height - (ME.tlStatusBar.Height * 3)
+  ME.tlStatusBar.Move(ME.taStringText.X, ME.ClientH - ME.tlStatusBar.h, ME.clientw, ME.tlStatusBar.h)
+
+END
+
+PUBLIC SUB Form_Close()
+
+'ME.TRACK_CHANGES()
+IF fGOtoForm = "" THEN 
+  fGOtoForm = FMain
+END IF
+ME.Close
+fGOtoForm.Show()
+
+
+' IF CTextEditor.bIsDescriptor = TRUE OR CTextEditor.bIsDesktopFile = TRUE THEN 
+' ME.Close
+' FEditPackage.Show
+' MEditPackage.ANALYZE_PACKAGE()
+' ELSE IF CTextEditor.bisport = TRUE THEN 
+' ME.Close
+' FBuildFromCrux.Show()
+' END IF
+
+END
+
+PUBLIC SUB taStringText_MouseUp()
+
+  ' enable and disable the copy menu based on if there is text selected or not
+  
+END

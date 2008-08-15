@@ -1,0 +1,5 @@
+* [] - Make room for localizations
+* [] - Make objects resize according to their .text property
+* [] - Restore the package editor
+* [] - Debug the package install after build process (problem finding / relocating package
+* [] - Debug the slack-desc writer (make it retreive the existing slack-desc after the user has closed the window

@@ -1,0 +1,326 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC arrSlackDesc AS String[]
+
+PUBLIC CONST WRAPLINES AS Integer = 5 ' #only 5 lines are available for descriotion
+PUBLIC CONST WRAPLEN AS Integer = 70 '# 70 Chars on each line
+PUBLIC FileDest AS String
+PUBLIC bEditing AS Boolean
+
+PUBLIC fRetTo AS Form
+
+PUBLIC SUB Form_Open()
+
+'ME.Caption = Variables.sMyName & " slack-desc writer"
+ME.Caption = Global.sMyname & " slack-desc writer"
+DescriptionWriter.Load_Values
+IF AppNameBox.Text <> "" THEN 'shortdescbox.Text = "" THEN
+ShortDescBox.Text = "< Enter a brief description for " & AppNameBox.Text & " here >"
+END IF
+
+END
+
+PUBLIC SUB DescArea_KeyPress()
+  IF DescArea.Length >= (WRAPLINES * WRAPLEN) THEN
+    SELECT CASE key.Code
+    CASE key.BackSpace
+    CASE key.Delete
+    CASE key.Home
+    CASE key.End
+    CASE key.Left
+    CASE key.Right
+    CASE key.Up
+    CASE key.Down
+    CASE key.Insert
+    CASE ELSE
+      STOP EVENT
+    END SELECT
+  END IF
+END
+PUBLIC FUNCTION slack_desc_wrap(strRaw AS String, intWrapLen AS Integer, intWrapLines AS Integer) AS Integer
+  ' Call this function with: DescArea.text, line wrap lenth (60)
+  ' returns:
+  ' -2 = unwrappable first line
+  ' -1 = Invalid inputs
+  ' 0 = all clear ... :)
+  ' >0 = Numver of chars overflowed due to linewrap
+  DIM strTemp AS String ' This holds individual lines on each loop
+  DIM intLineCounter AS Integer ' This tracks the current line in processing loop
+  DIM intLenRaw AS Integer ' Length of raw string
+  DIM intLenTem AS Integer ' Length of tem string
+  DIM timpPos AS Integer
+  DIM intBookmark AS Integer ' position on full string
+  DIM intEndLine AS Integer ' position of the last space on individual lines
+  ' test
+  ' if instr(strRaw,gb.newline) then message.info("New lines")
+  'TEXT:
+  intLenRaw = Len(strRaw) ' save string lenght for reuse
+  IF intLenRaw > 0 AND intWrapLen > 1 AND intWrapLines > 1 THEN 'sanity check
+    strRaw = Trim$(strRaw) ' remove leading and trailing spaces
+    strRaw = Replace$(strRaw, gb.NewLine, Space(1)) ' replace new lines with space
+    intLenRaw = Len(strRaw) ' save new string length after pre-processing
+      DO WHILE InStr(strRaw, Space(2))
+        strRaw = Replace$(strRaw, Space(2), Space(1)) 'Remove double spaces
+      LOOP
+      strTemp = Mid$(strRaw, 1, intWrapLen) ' Get terptative first line
+      ' PROCESS EACH LINE
+      FOR intLineCounter = 1 TO intWrapLines
+        intLenTem = Len(strTemp)
+        IF intLenTem = intWrapLen AND Right$(strTemp, 1) <> Space(1) THEN
+        ' Incorrectly wrapped line
+        ' first check for a new line after this char:
+        IF Mid$(strRaw, intBookMark + intWrapLen + 1, 1) <> gb.NewLine THEN
+        ' Now we need to step back looking for a space:
+        FOR intEndLine = intWrapLen TO 1 STEP -1
+          IF Mid$(strTemp, intEndLine, 1) = Space(1) THEN BREAK
+          ' found the space
+          NEXT
+        ELSE
+        strTemp = strTemp & Space(1)
+        END IF
+        IF intEndLine = 1 THEN RETURN -2 ' unwrappable line
+        ELSE
+          'short line:
+          intEndLine = intWrapLen
+        END IF
+      arrSlackDesc.Add(Mid$(strTemp, 1, intEndLine)) ' save line to array
+      intBookMark = intBookMark + intEndLine 'Start pos of next line in raw string
+      strTemp = Mid$(strRaw, intBookmark + 1, intWrapLen) ' get temptative lne
+      NEXT
+      IF intLenRaw > intBookmark THEN RETURN (intLenRaw - intBookmark)
+      'overflow due to linewrap
+      ELSE
+      RETURN -1 'invalid user input
+      END IF
+      RETURN 0 ' all clear
+     
+   
+END
+PUBLIC SUB refresh_desc()
+  DIM retval AS Integer
+  DIM n AS Integer
+  DIM intLenRaw AS Integer ' length of raw string
+  
+  intLenRaw = DescArea.Length
+  IF intLenRaw = 0 THEN
+  StatusLbl.Text = "No text has been entered" ' can't wrap an empty string
+  ELSE
+  ArrSlackDesc = NEW String[]
+  FixedDesc.Clear
+  
+  retval = slack_desc_wrap(DescArea.text, WRAPLEN, WRAPLINES)
+  SELECT CASE retval
+  CASE -2
+    StatusLbl.Text = "Unwrappable line ...:("
+  CASE -1
+    StatusLbl.Text = "Invalid input ... :("
+  CASE 0
+    StatusLbl.Text = "Writing slack-desc"
+    FOR n = 1 TO WRAPLINES
+   'FixedDesc.Text =  FixedDesc.text & Variables.sAPP&": " & arrSlackDesc[n - 1] &
+   FixedDesc.Text = FixedDesc.Text & AppNameBox.Text & ": " & arrSlackDesc[n - 1]&
+   gb.NewLine
+   
+      NEXT
+  CASE ELSE
+    StatusLbl.Text = "Description is too long. Please reduce by " & retval & " characters"
+    message.warning("Your description is too long. You're allowed 5 lines, 70 characters each." & gb.NewLine &
+    " The rest of the description file will be filled in automatically")
+    'DescArea.Select(intLenRaw - retval - 1, retval) 'doesn't work because of pre-processing
+    FOR n = 1 TO WRAPLINES
+    'FixedDesc.Text = AppNameBox.Text & " (" & ShortDescBox.Text & " )" & gb.newline & arrSlackDesc[n - 1] & gb.newline
+      'FixedDesc.Text = FixedDesc.Text & Variables.sAPP &": " & arrSlackDesc[n - 1] & gb.NewLine
+      FixedDesc.Text = FixedDesc.Text & AppNameBox.Text & ": " & arrSlackDesc[n - 1] & gb.newline
+      NEXT
+    END SELECT
+  END IF
+ 
+END
+
+
+
+
+PUBLIC SUB DescArea_KeyRelease()
+refresh_desc
+
+END
+
+PUBLIC SUB QuitBtn_Click()
+
+FNewSlackDesc.Close()
+fRetTo.Show
+
+END
+
+PUBLIC SUB ShortDescBox_Enter()
+
+  IF shortdescbox.Text = "< Enter a brief description for " & AppNameBox.Text & " here >" THEN
+  shortdescbox.Text = ""
+  END IF
+
+END
+
+PUBLIC SUB ShortDescBox_Leave()
+
+  IF shortdescbox.Text = "" THEN
+  shortdescbox.Text = "< Enter a brief description for " & AppNameBox.Text & " here >"
+  END IF
+
+END
+
+
+PUBLIC SUB FixedDesc_DblClick()
+  DIM sDetailDesc AS String
+  sDetailDesc = AppNameBox.Text & ": " & AppNameBox.Text & " " & ShortDescBox.Text & " " &
+  gb.NewLine & AppNameBox.Text & ": " & gb.NewLine &
+  FixedDesc.Text
+  ' message.Info(AppNameBox.Text & ": " & AppNameBox.Text & " " & ShortDescBox.Text & " " &
+  ' gb.NewLine & AppNameBox.Text & ": " & gb.NewLine &
+  ' FixedDesc.Text &
+  IF ME.AuthorBox.text <> "" THEN 
+  sDetailDesc = sDetailDesc & AppNameBox.Text & ": " & "AUTHOR: " & AuthorBox.Text & gb.NewLine
+  END IF
+  IF ME.WebsiteBox.text <> "" THEN 
+  sDetailDesc = sDetailDesc & AppNameBox.Text & ": " & "WEBSITE: " & WebsiteBox.Text & gb.NewLine
+  END IF
+  IF ME.LicBox.text <> "" THEN 
+  sDetailDesc = sDetailDesc & AppNameBox.Text & ": " & "LICENSE: " & LicBox.Text & gb.NewLine
+  END IF
+  message.Info(sDetailDesc)
+  
+
+END
+PUBLIC SUB StoreFile()
+  DIM hfile AS File
+  DIM content AS String
+  DIM appName AS String
+  
+  'IF global.sAPP <> FNewSlackDesc.AppNameBox.Text THEN 
+  IF ClsBuildVars.sName <> ME.AppNameBox.Text THEN 
+  appName = FNewSlackDesc.AppNameBox.Text
+  ELSE 
+  appName = ClsBuildVars.sName
+  END IF
+  content = AppNameBox.Text & ": " & ShortDescBox.Text & " " &
+  gb.NewLine & appName & ": " & gb.NewLine &
+  FixedDesc.Text
+  
+IF SlackDescWriter.sAuthor THEN 
+  content = content &
+  appName & ": " & "AUTHOR: " & AuthorBox.Text & gb.NewLine
+  END IF
+  IF SlackDescWriter.sWEB THEN 
+  content = content &
+  AppName & ": " & "WEBSITE: " & WebsiteBox.Text & gb.NewLine
+  END IF
+  IF SlackDescWriter.sLicense THEN 
+  content = content &
+  AppName & ": " & "LICENSE: " & LicBox.Text
+  END IF
+  content = content & gb.NewLine
+  'ME.AppNameBox.Text & ": " & "License: " & LicBox.Text
+IF NOT FileDest THEN
+'FileDest = clsGlobal.TMP_DIR &/ "slack-desc"
+FileDest = ClsGlobal.sTMP_DIR &/ "slack-desc"
+'FCreatePkg.tlDescFilePath.Text = FileDest
+FrmSrcToPkg.txtSlackDescPath.Text = FileDest
+
+END IF
+ 
+IF IsDir(file.Dir(FileDest)) = FALSE THEN 
+'TRY MKDIR file.Dir(filedest)
+SHELL "mkdir -p " & file.Dir(filedest) WAIT 
+END IF
+'message.Info("Save file to:" & gb.NewLine & file.Dir(filedest))
+file.Save(filedest, SConv(content))
+'message.Info("Description file temporarily stored to " & filedest)
+
+END
+
+
+PUBLIC SUB SaveBtn_Click()
+IF ME.bEditing = FALSE THEN 
+  FrmSrcToPkg.txtSlackDescPath.Text = ME.FileDest
+END IF
+StoreFile
+ClsBuildVars.bhasDesc = TRUE
+ME.Close
+fRetTo.Show
+END
+
+PUBLIC SUB BackBtn_Click()
+
+ME.Close
+IF ME.bEditing = TRUE THEN 
+FEditPackage.Show()
+
+ELSE 
+fRetTo.show
+END IF
+
+
+END
+
+PUBLIC SUB Form_Close()
+
+fRetTo.Show
+END
+
+
+PUBLIC SUB DescArea_Change()
+
+  ME.refresh_desc
+
+END
+
+PUBLIC SUB LicBox_KeyRelease()
+
+SlackDescWriter.sLicense = LicBox.Text
+  
+
+END
+
+PUBLIC SUB WebsiteBox_KeyRelease()
+
+SlackDescWriter.sWEB = WebsiteBox.Text  
+
+END
+
+PUBLIC SUB AuthorBox_KeyRelease()
+
+SlackDescWriter.sAuthor = AuthorBox.Text  
+
+END
+
+PUBLIC SUB btCancel_Click()
+fRetTo.Show
+
+END
+
+PUBLIC SUB btPreviewDesc_Click()
+
+  ME.FixedDesc_DblClick()
+
+END
+
+PUBLIC SUB WebsiteBox_KeyPress()
+
+  
+
+END

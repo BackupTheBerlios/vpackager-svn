@@ -1,0 +1,47 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+
+ ' Variables for Package editor
+ 
+ ' Package source
+ STATIC PUBLIC bPackageSaved AS Boolean
+ STATIC PUBLIC bPackageModified AS Boolean
+STATIC PUBLIC sPackageName AS String
+STATIC PUBLIC sPackagePath AS String
+STATIC PUBLIC bHasDescription AS Boolean
+STATIC PUBLIC bHasDestktopEntry AS Boolean
+
+STATIC PUBLIC sDescFileString AS String ' the description file as a whole string
+STATIC PUBLIC sDesktopFileString AS String ' the desktop file as a whole string
+
+STATIC PUBLIC sPath_To_Slack_Desc AS String
+STATIC PUBLIC sPath_To_Desktop_File AS String
+
+' after the name has been split
+STATIC PUBLIC sAppName AS String
+STATIC PUBLIC sAppVer AS String
+STATIC PUBLIC sPkgArch AS String
+STATIC PUBLIC sPkgTag AS String
+STATIC PUBLIC sPkgFormat AS String
+
+' Package destination (After it has been edited
+
+STATIC PUBLIC sPkgTargetDest AS String
+STATIC PUBLIC bSaveBackupCopy AS Boolean

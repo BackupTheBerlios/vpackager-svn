@@ -1,0 +1,104 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC Proc_Browse AS Process
+' Holds routines for package browser
+' simply opens up a file manager to the location of the extracted package
+PUBLIC SUB FIND_FILE_MANAGER()
+  
+  DIM sManager AS String
+  DIM skonqueror AS String
+  DIM snautilus AS String
+  DIM sthunar AS String
+  DIM sIdFile AS file ' identifies the id file in vector versions
+  DIM sIdLine AS String ' The line that tells me which version of vl is running
+  
+  skonqueror = "/opt/kde/bin/konqueror"
+  snautilus = "/usr/bin/nautilus"
+  sthunar = "/usr/bin/thunar"
+  
+  IF Exist("/etc/vector-version") THEN 
+  sIdFile = OPEN "/etc/vector-version" FOR READ 
+    WHILE NOT Eof(sIdFile)
+      LINE INPUT #sIdFile, sIdLine
+        ' run the actual test
+        IF InStr(sIdLine, "Dynamite") THEN 
+            IF Exist(sthunar) THEN 
+            sManager = sthunar
+            ELSE IF Exist(skonqueror) THEN 
+            sManager = skonqueror
+            END IF
+        ELSE IF InStr(sIdLine, "SOHO") THEN 
+          IF Exist(skonqueror) THEN 
+            sManager = skonqueror
+          ELSE IF Exist(snautilus) THEN 
+            sManager = snautilus
+          END IF
+        ELSE 
+        ' unable to determine distro
+          IF Exist(skonqueror) THEN 
+            sManager = skonqueror
+          ELSE IF Exist(sthunar) THEN 
+            sManager = sthunar
+          ELSE IF Exist(snautilus) THEN 
+            sManager = snautilus
+          END IF
+        END IF
+      WEND 
+    ELSE 
+    ' /etc/vector-version does not exist
+    'message.Error("Unable to identify your Vector Linux Release. Are you sure you are running Vector Linux?")
+    IF Exist(sthunar) THEN 
+    sManager = sthunar
+    ELSE IF Exist(skonqueror) THEN 
+    sManager = skonqueror
+    ELSE IF Exist(snautilus) THEN 
+    sManager = snautilus
+    ELSE 
+    message.Error("Unable to identify your Vector Linux release. No suitable file manager found." & gb.newline &
+    "Suitable options are: Thunar, Nautilus or konqueror")
+    END IF
+  END IF
+
+IF sManager THEN 
+CBrowsePackage.sFileManager = sManager
+END IF
+
+
+END
+
+PUBLIC SUB OPEN_FILE_MANAGER()
+  ME.FIND_FILE_MANAGER()
+  Proc_Browse = SHELL CBrowsePackage.sFileManager & " " & Global.sWorkingPath
+  FEditPackage.tmBrowseMon.Enabled = TRUE
+END
+
+PUBLIC SUB CHECK_PROCESS_STATUS()
+  
+  IF Proc_Browse.state = process.running THEN 
+  MEditPackage.DISABLE_EDITOR_CONTROLS()
+  ELSE IF Proc_Browse.state = process.stopped THEN 
+  FEditPackage.tmBrowseMon.Enabled = FALSE
+  MEditPackage.ENABLE_EDITOR_CONTROLS()
+  END IF
+  
+  
+  
+END
+

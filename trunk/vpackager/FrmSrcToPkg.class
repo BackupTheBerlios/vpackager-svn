@@ -1,0 +1,299 @@
+' Gambas class file
+
+PUBLIC SUB btBrowse_Click()
+
+IF CSettings.bUseDefSrcLoc = TRUE THEN 
+  dialog.path = CSettings.sDefSrcLoc
+ELSE 
+  dialog.Path = User.Home
+END IF
+
+  'dialog.path = global.sDefSrcDir
+  dialog.Title = "Please select source to build"
+  dialog.filter = ["*.tar.*", "Compressed Source Archive"]
+  IF dialog.OpenFile() THEN RETURN 
+  ME.txtSrcPath.text = dialog.Path
+  ClsBuildVars.sSrcPath = dialog.Path
+  MdlBuild.SPLIT_FILE_NAME
+  ME.ENABLE_CONTROLS()
+
+END
+
+PUBLIC SUB btNext_Click()
+ClsBuildVars.sConfig = ME.txtConfig.Text
+ME.Hide
+FrmBuildView.Show
+'MdlBuild.EXTRACT_SRC(ClsBuildVars.sSrcPath)
+'MdlExtract.EXTRACT_SRC(ClsBuildVars.sSrcPath)
+IF ME.txtSlackDescPath.Text <> "" THEN 
+  ClsBuildVars.sSlackDesc = Trim(ME.txtSlackDescPath.text)
+  ClsBuildVars.bhasDesc = TRUE
+END IF
+
+' Display a summary of the build options
+
+ME.DISPLAY_BUILD_SUMMARY
+WAIT 2
+MdlExtract.EXTRACT_SRC(ClsBuildVars.sSrcPath)
+
+  
+END
+
+PUBLIC SUB DISPLAY_BUILD_SUMMARY()
+  
+  DIM sConf AS String[]
+  DIM i AS Integer
+  DIM sOpt AS String
+  DIM sCFLAGS AS String
+  
+  WITH FrmBuildView.taTerm
+  .Pos = Len(.text)
+  .Insert("vpackager is ready to build " & ClsBuildVars.sname & "-" & ClsBuildVars.sVersion & gb.NewLine &
+  gb.NewLine &
+  "The following settings will be used:" & gb.NewLine &
+  "COMPILER FLAGS: " & ClsBuildVars.sCFLAGS & gb.NewLine &
+  "CONFIGURE OPTIONS:" & gb.NewLine)
+  END WITH 
+  
+  sConf = Split(Trim(ClsBuildVars.sConfig), " ")
+    IF sConf THEN 
+      FOR i = 0 TO sConf.count - 1
+        sOpt = Trim(sConf[i])
+      FrmBuildView.taTerm.Insert(sOpt & gb.NewLine)
+      NEXT 
+    END IF
+    FrmPorts.taShell.Insert(gb.NewLine)
+    IF ClsBuildVars.sSlackDesc THEN 
+    FrmBuildView.taTerm.Insert(gb.NewLine & "PATH TO DESCRIPTION FILE: " & ClsBuildVars.sSlackDesc & gb.NewLine & gb.newline)
+    END IF
+    'IF Global.bWriteScript = TRUE THEN 
+    IF CSettings.bWriteScript = TRUE THEN 
+      FrmBuildView.taTerm.Insert("vpackager will generate a build script" & gb.NewLine)
+    ELSE 
+      FrmBuildView.taTerm.Insert("vpackager WILL NOT generate a build script" & gb.NewLine)
+    END IF
+    FrmPorts.taShell.Insert(gb.NewLine & gb.NewLine)
+    MdlMain.WRITE_TO_BUILD_LOG("Begin extraction process")
+END
+
+
+
+
+PUBLIC SUB cbArchSel_Click()
+
+  ClsBuildVars.sArch = Trim(ME.cbArchSel.text)
+  MdlBuild.SUMMARIZE_BUILD()
+
+END
+
+PUBLIC SUB cbSelPkgTag_Click()
+
+  IF ME.cbSelPkgTag.text = "Other" THEN 
+    ME.txtCustPkgTag.Visible = TRUE
+    ME.txtCustPkgTag.Enabled = TRUE
+      ClsBuildVars.sTag = ""
+  ELSE 
+    ME.txtCustPkgTag.Enabled = FALSE
+    ME.txtCustPkgTag.Visible = FALSE
+      ClsBuildVars.sTag = Trim(ME.cbSelPkgTag.text)
+  END IF
+  
+
+END
+
+PUBLIC SUB Form_Open()
+
+  ME.LOAD_FORM_DEFAUTLS()
+  ME.DISABLE_CONTROLS()
+  ' retreive and apply window attributes
+  IF ClsGlobal.bRememberAttr = TRUE THEN 
+    ME.X = MSettings.READ_SETTINGS("WINDOWS/SRCBUILD/LEFT", 10)
+    ME.Y = MSettings.READ_SETTINGS("WINDOWS/SRCBUILD/TOP", 10)
+    ME.Width = MSettings.READ_SETTINGS("WINDOWS/SRCBUILD/WIDTH", 800)
+    ME.Height = MSettings.READ_SETTINGS("WINDOWS/SRCBUILD/HEIGHT", 414)
+
+  ELSE 
+    ME.Center
+END IF
+END
+PUBLIC SUB ENABLE_CONTROLS()
+  
+  WITH ME
+  .txtCFlags.Enabled = TRUE
+  .txtConfig.Enabled = TRUE
+  .cbArchSel.Enabled = TRUE
+  .cbPkgBuildSel.Enabled = TRUE
+  .cbPkgTypeSel.Enabled = TRUE
+  .cbSelPkgTag.Enabled = TRUE
+  .btNext.Enabled = TRUE
+  .btNext.ForeColor = COLOR.Black
+  .btCreateDesc.Enabled = TRUE
+  .btCreateDesc.ForeColor = color.Black
+  .btLoadDesc.Enabled = TRUE
+  .btLoadDesc.ForeColor = color.Black
+  .txtSlackDescPath.Enabled = TRUE
+  .btViewConfOpts.Enabled = TRUE
+  .tlSummary.Visible = TRUE
+  .TlBuildSum2.Visible = TRUE
+  END WITH 
+  
+END
+
+PUBLIC SUB DISABLE_CONTROLS()
+  
+  WITH ME
+  .txtCFlags.Enabled = FALSE
+  .txtConfig.Enabled = FALSE
+  .cbArchSel.Enabled = FALSE
+  .cbPkgBuildSel.Enabled = FALSE
+  .cbPkgTypeSel.Enabled = FALSE
+  .cbSelPkgTag.Enabled = FALSE
+  .btNext.Enabled = FALSE
+  .btNext.ForeColor = COLOR.gray
+  .btCreateDesc.Enabled = FALSE
+  .btCreateDesc.ForeColor = color.Gray
+  .btLoadDesc.Enabled = FALSE
+  .btLoadDesc.ForeColor = color.Gray
+  .txtSlackDescPath.Enabled = FALSE
+  .btViewConfOpts.Enabled = FALSE
+  .tlSummary.Visible = FALSE
+  .TlBuildSum2.Visible = FALSE
+  END WITH 
+  
+END
+
+
+
+PUBLIC SUB LOAD_FORM_DEFAUTLS()
+  
+  WITH ME
+  .cbArchSel.text = ClsBuildVars.sArch
+  .cbPkgBuildSel.Text = ClsBuildVars.sRel
+  .cbPkgTypeSel.text = ClsBuildVars.sType
+  .cbSelPkgTag.text = ClsBuildVars.sTag
+  .txtCFlags.Text = ClsBuildVars.sCFLAGS
+  .txtConfig.text = ClsBuildVars.sConfig
+  END WITH 
+  
+  
+END
+
+
+PUBLIC SUB cbPkgBuildSel_Click()
+
+  ClsBuildVars.sRel = Trim(ME.cbPkgBuildSel.text)
+  MdlBuild.SUMMARIZE_BUILD()
+
+END
+
+PUBLIC SUB cbPkgTypeSel_Click()
+
+  ClsBuildVars.sType = Trim(ME.cbPkgTypeSel.text)
+  MdlBuild.SUMMARIZE_BUILD()
+
+END
+
+PUBLIC SUB txtCustPkgTag_KeyRelease()
+
+  IF ME.txtCustPkgTag.text <> "" THEN 
+    ClsBuildVars.sTag = ME.txtCustPkgTag.Text
+  END IF
+  MdlBuild.SUMMARIZE_BUILD
+
+END
+
+PUBLIC SUB btLoadDesc_Click()
+  dialog.filter = ["slack-desc", "Formatted Description File"]
+  dialog.Title = "Select Formatted Description File" 
+  dialog.Path = File.Dir(ME.txtSrcPath.Text)
+  IF dialog.openfile() THEN RETURN 
+    ClsBuildVars.sSlackDesc = dialog.Path
+  ME.txtSlackDescPath.text = ClsBuildVars.sSlackDesc
+  ClsBuildVars.bhasDesc = TRUE
+
+END
+
+PUBLIC SUB btBack_Click()
+
+ME.Close
+
+
+END
+
+PUBLIC SUB btViewConfOpts_Click()
+
+  mdlMain.DISPLAY_CONFIGURE_OPTIONGS(ClsBuildVars.sSrcPath)
+
+END
+
+PUBLIC SUB btCreateDesc_Click()
+
+  ME.Hide
+  FNewSlackDesc.bEditing = FALSE
+  ' may want to save this to conserve the right path for later
+  
+  TRY MKDIR ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion
+  FNewSlackDesc.FileDest = ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "slack-desc"
+  FNewSlackDesc.fRetTo = ME
+  FNewSlackDesc.AppNameBox.Text = ClsBuildVars.sName
+  FNewSlackDesc.Show
+  
+'  FNewSlackDesc.Show(ClsBuildVars.sName, ClsBuildVars.sVersion, ME.Name)
+
+END
+
+PUBLIC SUB Form_Close()
+ 
+  IF ClsGlobal.bRememberAttr = TRUE THEN 
+  MSettings.WRITE_SETTINGS("WINDOWS/SRCBUILD/LEFT", ME.Left)
+  MSettings.WRITE_SETTINGS("WINDOWS/SRCBUILD/TOP", ME.TOP)
+  MSettings.WRITE_SETTINGS("WINDOWS/SRCBUILD/WIDTH", ME.Width)
+  MSettings.WRITE_SETTINGS("WINDOWS/SRCBUILD/HEIGHT", ME.Height)
+  FMain.Show()
+END IF
+
+END
+
+PUBLIC SUB Form_Resize()
+
+  WITH ME
+    .txtSrcPath.Width = ME.ClientWidth - ME.lbSrc.Width - ME.btBrowse.Width - 16
+    .btBrowse.Move(ME.ClientWidth - ME.btBrowse.Width - 2, ME.txtSrcPath.top)
+    .frBuildOpts.Width = ME.ClientW - 12
+    .txtConfig.Width = ME.frBuildOpts.Width - ME.lbConfig.Width - ME.btViewConfOpts.Width - 16
+    .btViewConfOpts.Move(ME.ClientWidth - ME.btViewConfOpts.Width - 16, txtConfig.top - ME.btViewConfOpts.Height * 2 + 8) ' ??
+    .txtCFlags.Width = ME.txtConfig.Width
+    .frPkgInfo.Width = ME.frBuildOpts.Width
+    '.pbLogo.Move(ME.ClientWidth - ME.pbLogo.Width - 12, ME.frPkgInfo.top + (ME.frBuildOpts.Height / 4))
+    .pbLogo.Move(ME.frPkgInfo.Width - ME.pbLogo.Width - 10, ME.lbArch.top + (ME.lbArch.Height / 4))
+    .cbPkgBuildSel.Move(ME.pbLogo.Left - ME.cbPkgBuildSel.Width - 4, ME.cbArchSel.top)
+    .lbPkgBuild.Move(ME.cbPkgBuildSel.left - ME.lbPkgBuild.Width - 4, ME.cbPkgBuildSel.top)
+    .cbPkgTypeSel.Move(ME.cbPkgBuildSel.Left, ME.lbBuildTag.top)
+    .lbPkgType.Move(ME.lbPkgBuild.Left, ME.lbBuildTag.top)
+    .btCreateDesc.Move(ME.ClientWidth - ME.btCreateDesc.Width - 4, ME.lbDesc.top)
+    .btLoadDesc.Move(ME.btCreateDesc.left - ME.btLoadDesc.Width - 4, ME.btCreateDesc.top)
+    .txtSlackDescPath.Width = ME.ClientWidth - (ME.lbDesc.Width + ME.btLoadDesc.Width + ME.btCreateDesc.Width + 18)
+    .tlSummary.Move(ME.lbSrc.left, ME.ClientHeight - ME.tlSummary.Height - 4)
+    .tlSummary.Width = (ME.ClientWidth - ME.btBack.Width - 20) / 2
+    .TlBuildSum2.Move(ME.tlSummary.Left + ME.tlSummary.Width + 4, ME.tlSummary.top)
+    .TlBuildSum2.Width = ME.tlSummary.Width
+    .btBack.Move(ME.ClientWidth - ME.btBack.Width - 4, ME.tlSummary.top)
+    .btNext.Move(ME.btBack.left, ME.tlSummary.top + ME.btBack.Height + 4)
+    
+END WITH
+WAIT 0.2
+
+' check for current dimmensions
+  IF ME.ClientHeight <> 414 THEN 
+    ME.Height = 414
+  END IF
+  IF ME.ClientWidth < 800 THEN 
+    ME.Width = 800
+  END IF
+  IF ME.Maximized = TRUE THEN 
+   ME.Maximized = FALSE
+   ME.Resize(Desktop.Width, 414)
+  END IF
+ME.Refresh()
+
+END

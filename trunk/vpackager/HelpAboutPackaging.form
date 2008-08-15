@@ -1,0 +1,39 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,64,64)
+  Text = ("")
+  Border = Window.Fixed
+  { tlBanner TextLabel
+    MoveScaled(1,1,62,5)
+    Font = Font["Bitstream Charter"]
+    Text = ("")
+    Alignment = Align.Center
+  }
+  { tlAboutPackaging TextLabel
+    MoveScaled(1,8,62,51)
+    Font = Font["Bitstream Charter"]
+    Padding = 1
+    Text = ("<h4>About Packaging</h4>There are many ways to contribute to the VectorLinux project development. One of them happens to be packaging software from source. This utility is designed to automate as much of the source building and packaging as possible, thus making it easy for new and experienced users to package and safely install software in their systems.\n<br>\n<h4>Sharing your packages</h4>\nThere are a couple of rules that must be followed when you submit your packages. See the packaging documentation for more info at <a href=http://www.vectorlinux.com/forum2/index.php?topic=1380.0> http://www.vectorlinux.com/forum2/index.php?topic=1380.0</a><br>\n<br><h4>Creating a package to submit to the repositories</h4>\nThis utility will create packages that meet the requirements for submitting, however, you MUST include a description file. <br>\nDescription files are optional if you do not plan to share your packages.<br><br>\nThanks for your contribution on behalf of the VectorLinux development team\n\n\n")
+    Alignment = Align.TopLeft
+    Border = Border.Etched
+  }
+  { btClose Button
+    MoveScaled(54,60,9,3)
+    Font = Font["Bitstream Charter"]
+    Text = ("Close")
+    Picture = Picture["icon:/16/cancel"]
+  }
+  { PictureBox1 PictureBox
+    MoveScaled(58,2,5,5)
+    Font = Font["Bitstream Charter"]
+    Picture = Picture["Graphics/vl_logo.jpg"]
+    Stretch = True
+  }
+  { PictureBox2 PictureBox
+    MoveScaled(1,2,5,5)
+    Font = Font["Bitstream Charter"]
+    Picture = Picture["Graphics/vpackager.png"]
+    Stretch = True
+  }
+}

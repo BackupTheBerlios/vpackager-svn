@@ -1,0 +1,143 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,92,62)
+  Text = ("")
+  Icon = Picture["Graphics/vpackager.png"]
+  Border = Window.Fixed
+  { tlPackage TextLabel
+    MoveScaled(1,6,13,3)
+    Text = ("Package Path")
+    Alignment = Align.Normal
+  }
+  { txtPackagePath TextBox
+    MoveScaled(14,6,64,3)
+    Text = ("")
+  }
+  { btBrowse Button
+    MoveScaled(79,6,12,3)
+    Text = ("Browse")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-directory.png"]
+  }
+  { taConsole TextArea
+    MoveScaled(1,22,90,34)
+    Text = ("")
+    ReadOnly = True
+  }
+  { tmExplodeMonitor #Timer
+    #X = 264
+    #Y = 240
+  }
+  { tlOpenPkg TextLabel
+    MoveScaled(5,10,27,3)
+    Visible = False
+    Expand = True
+    Text = ("Package is open for editing")
+  }
+  { pbPackageOpened PictureBox
+    MoveScaled(2,10,3,3)
+    Visible = False
+    Font = Font["12"]
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+  }
+  { tlDescPresent TextLabel
+    MoveScaled(5,14,27,3)
+    Visible = False
+    Text = ("Package Has Description File")
+  }
+  { PbDescPresent PictureBox
+    MoveScaled(2,14,3,3)
+    Visible = False
+    Font = Font["12"]
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+  }
+  { tlDesktoFile TextLabel
+    MoveScaled(5,18,27,3)
+    Visible = False
+    Text = ("Package Has Desktop File")
+  }
+  { pbDesktopFilePresent PictureBox
+    MoveScaled(2,18,3,3)
+    Visible = False
+    Font = Font["12"]
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-apply.png"]
+  }
+  { btEditDesc Button
+    MoveScaled(32,14,10,3)
+    Visible = False
+    Enabled = False
+    Text = ("Edit")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+  }
+  { btNewDesc Button
+    MoveScaled(32,14,10,3)
+    Visible = False
+    Enabled = False
+    Text = ("Create")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dnd.png"]
+  }
+  { btEditDesktopFile Button
+    MoveScaled(32,18,10,2)
+    Visible = False
+    Enabled = False
+    Text = ("Edit")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+  }
+  { btNewDesktopButton Button
+    MoveScaled(32,18,10,3)
+    Visible = False
+    Enabled = False
+    Text = ("Create")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dnd.png"]
+  }
+  { btBrowsePackage Button
+    MoveScaled(54,10,18,3)
+    Visible = False
+    Enabled = False
+    Text = ("Browse Package")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dnd-multiple.png"]
+  }
+  { btRepackage Button
+    MoveScaled(54,14,18,3)
+    Visible = False
+    Enabled = False
+    Text = ("Save Package")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-save-as.png"]
+  }
+  { tmRepackage #Timer
+    #X = 120
+    #Y = 240
+  }
+  { btExit Button
+    MoveScaled(54,18,18,3)
+    Visible = False
+    Enabled = False
+    Text = ("Close")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-close.png"]
+  }
+  { tmBrowseMon #Timer
+    #X = 424
+    #Y = 264
+  }
+  { pbLogo PictureBox
+    MoveScaled(83,11,8,10)
+    Font = Font["12"]
+    Picture = Picture["Graphics/vpackager.png"]
+    Stretch = True
+  }
+  { tlBanner TextLabel
+    MoveScaled(0,1,92,4)
+    Font = Font["+3"]
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("PACKAGE EDITOR")
+    Alignment = Align.Center
+    Border = Border.Plain
+  }
+  { btExplodit Button
+    MoveScaled(36,10,16,3)
+    Visible = False
+    Text = ("Crack it open!")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-find-and-replace.png"]
+  }
+}

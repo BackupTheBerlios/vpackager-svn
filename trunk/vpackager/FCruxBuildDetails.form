@@ -1,0 +1,95 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,56,41)
+  Text = ("")
+  Icon = Picture["icon:/16/linux"]
+  Border = Window.Fixed
+  { FLegend Frame
+    MoveScaled(1,9,54,10)
+    Text = ("Target Distro")
+    { rbVl58 RadioButton targetvl
+      Name = "rbVl58"
+      MoveScaled(1,3,19,2)
+      Tag = "vl58"
+      Text = ("VectorLinux 5.8")
+    }
+    { rbVl59 RadioButton targetvl
+      Name = "rbVl59"
+      MoveScaled(1,6,19,2)
+      Tag = "vl59"
+      Text = ("VectorLinux 5.9")
+    }
+    { rbVl60 RadioButton targetvl
+      Name = "rbVl60"
+      MoveScaled(26,2,26,3)
+      Tag = "vl60"
+      Text = ("VectorLinux 6.0")
+    }
+  }
+  { lbPackageInfo TextLabel
+    MoveScaled(0,1,56,7)
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("")
+  }
+  { cbInstallb CheckBox
+    MoveScaled(1,20,23,3)
+    Text = ("Install after build")
+  }
+  { btBuild Button
+    MoveScaled(45,37,10,2)
+    Text = ("Begin")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-go-forward-ltr.png"]
+  }
+  { Button1 Button
+    MoveScaled(34,37,10,2)
+    Text = ("Cancel")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+  }
+  { lbPkgName TextLabel
+    MoveScaled(0,33,56,3)
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("")
+    Alignment = Align.TopRight
+  }
+  { cbIgnoreMd5sum CheckBox cruxopts
+    Name = "cbIgnoreMd5sum"
+    MoveScaled(1,23,23,3)
+    Tag = "-im"
+    Text = ("Ignore Md5sum")
+  }
+  { bDepRes CheckBox
+    MoveScaled(26,20,29,3)
+    Text = ("Resolve Dependancies")
+  }
+  { bClean CheckBox cruxopts
+    Name = "bClean"
+    MoveScaled(26,23,29,3)
+    Tag = "-c"
+    ToolTip = ("Remove package and downloaded files when done")
+    Text = ("Clean port directory")
+  }
+  { bforcerb CheckBox cruxopts
+    Name = "bforcerb"
+    MoveScaled(1,26,23,3)
+    Tag = "-rb"
+    ToolTip = ("Force requiredbuilder for dependancy tracking")
+    Text = ("Use requiredbuilder")
+  }
+  { bkeepwork CheckBox cruxopts
+    Name = "bkeepwork"
+    MoveScaled(26,26,29,3)
+    Tag = "-kw"
+    ToolTip = ("Keep temporary work directory")
+    Text = ("Keep work")
+  }
+  { bForceBuild CheckBox cruxopts
+    Name = "bForceBuild"
+    MoveScaled(1,29,23,3)
+    Tag = "-f"
+    ToolTip = ("Force build even if package appears up to date")
+    Text = ("Force Build")
+  }
+}

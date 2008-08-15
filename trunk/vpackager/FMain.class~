@@ -1,0 +1,243 @@
+' Gambas class file
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC SUB rbNewPkg_Click()
+
+    ME.rbNewCrux.Value = FALSE
+    ME.rbNewSrc.Value = FALSE
+  IF ME.rbNewPkg.Value = TRUE THEN 
+  ME.rbNewPkg.Font.Bold = TRUE
+  ME.rbEdit.Font.Bold = FALSE
+    
+    WITH ME.rbNewSrc
+    .Visible = TRUE
+    .Move(ME.tlExp.Left + 10, ME.tlExp.top + ME.tlExp.Height + 8)
+    END WITH 
+    WITH ME.rbNewCrux
+      .Visible = TRUE
+      .Move(ME.rbNewSrc.Left, ME.rbNewSrc.top + ME.rbNewSrc.Height)
+    END WITH 
+    
+      END IF
+     
+WITH ME.rbEdit
+  .move(ME.rbNewPkg.Left, ME.rbNewCrux.top + ME.rbNewCrux.Height + 4)
+  .Value = FALSE
+END WITH
+
+' make sure we know what to do next
+ME.rbNewSrc.Value = TRUE
+
+'IF ME.rbNewSrc.Value = FALSE AND ME.rbNewCrux.Value = FALSE THEN 
+'  ClsGlobal.sSelProcedure = ""
+'END IF
+
+END
+
+PUBLIC SUB AUTOSIZE_OBJECTS()
+  
+  WITH FMain
+    .btNext.Width = MdlObjectSizer.get_object_width(.btNext.Text) + 36
+    .btQuit.Width = MdlObjectSizer.get_object_width(.btQuit.Text) + 36
+    .rbNewCrux.Width = MdlObjectSizer.get_object_width(.rbNewCrux.Text) + 24
+    .rbNewSrc.Width = MdlObjectSizer.get_object_width(.rbNewSrc.Text) + 24
+    .rbEdit.Width = MdlObjectSizer.get_object_width(.rbEdit.Text) + 24
+    
+  END WITH 
+END
+
+
+PUBLIC SUB Form_Open()
+
+' check for permissions
+  ' ' ' IF User.Id <> 0 THEN 
+  ' ' '   message.Error("You must have root priviledges to run this application.<br> Please switch to the root account and try again.")
+  ' ' '  FMain.CLOSE
+  ' ' '  STOP EVENT  
+  ' ' ' END IF
+  ME.AUTOSIZE_OBJECTS
+  IF Desktop.Width < 600 AND Desktop.Height < 800 THEN 
+    SELECT CASE message.Question("This application is designed to run on a 800X600 display or larger." & gb.NewLine &
+    "Your display appears to be smaller than that. Continuing would <br>cause some things not to display properly." & gb.newline & 
+    "Would you like to continue anyway?", "Yes", "No")
+      CASE 1 'yes
+        'do nothing
+      CASE 2
+        FMain.Close
+    END SELECT 
+    ELSE 
+      
+  END IF
+ApplySettings.apply_settings()
+ME.rbNewSrc_Click()
+ME.rbNewSrc.Value = TRUE
+ME.Center
+
+ME.btQuit.Move(ME.pnContents.Width - ME.btQuit.Width + ME.pnContents.Left, ME.pnContents.Top + ME.pnContents.Height + 4)
+
+'ME.btQuit.Move(ME.Width - ME.btNext.Width - 4, ME.Height - (ME.btNext.Height * 3))
+ME.btNext.Move(ME.btQuit.Left - ME.btNext.Width - 4, ME.btQuit.top)
+END
+
+PUBLIC SUB rbEdit_Click()
+
+  ME.tlActionExp.Text = "<h3>EDIT EXISTING PACKAGE</h3><br>" &
+  "Allows you to make changes to an existing package. Save your changes and put it back together.<br>" &
+  "<br>Changes that can be made include:<br>" &
+  "* Add / Edit the package's description file<br>" &
+  "* Add / Edit a .desktop file in the package<br>" &
+  "* Browse the contents of the package"
+  
+ 
+   
+
+END 
+    
+
+PUBLIC SUB btQuit_Click()
+
+  FMain.Close()
+
+END
+
+PUBLIC SUB btNext_Click()
+  IF ME.rbNewCrux.Value = TRUE THEN 
+    FrmPorts.Show
+  ELSE IF ME.rbNewSrc.Value = TRUE THEN 
+    FrmSrcToPkg.Show
+  ELSE IF ME.rbEdit.Value = TRUE THEN 
+    ' Open editor form
+    FrmPkgEditor.Show
+    RETURN 
+    
+  END IF
+  
+FMain.hide
+END
+
+PUBLIC SUB rbNewSrc_Click()
+IF ME.rbNewSrc.Value = TRUE THEN 
+  'ME.rbNewSrc.value = TRUE
+  ME.rbNewCrux.Value = FALSE
+  
+  ME.tlActionExp.Move(ME.rbnewcrux.Left + 4, ME.rbnewcrux.top + ME.rbnewcrux.Height + 8, ME.pnContents.Width - ME.rbnewcrux.Left - 8, ME.pnContents.height - ME.rbnewcrux.top - ME.rbnewcrux.height - 14)
+  
+  ME.tlActionExp.Text = "<h3>FROM COMPRESSED SOURCE</h3><br>" &
+                        "Fully automated process to build and install software from compressed source code<br>" &
+                        "Use this option to build the following type of sources<br><br>" &
+                        "* GNU (autoconf guided builds)<br>" &
+                        "* CMake<br>" &
+                        "* Python"
+                        
+  
+  ClsGlobal.sSelProcedure = "SOURCE"
+  
+ELSE 
+  ClsGlobal.sSelProcedure = ""
+END IF
+
+END
+
+PUBLIC SUB rbNewCrux_Click()
+
+  IF ME.rbNewCrux.Value = TRUE THEN 
+     
+  ME.rbNewSrc.Value = FALSE
+   ME.tlActionExp.Move(ME.rbnewcrux.Left + 4, ME.rbnewcrux.top + ME.rbnewcrux.Height + 8, ME.pnContents.Width - ME.rbnewcrux.Left - 8, ME.pnContents.height - ME.rbnewcrux.top - ME.rbnewcrux.height - 14)
+  ME.tlActionExp.Text = "<h3>CRUXPORTS4SLACK</h3><br>" &
+  "This option will build and install software using cruxports4slack scripts. Features include:<br><br>" &
+  "* Dependancy resolving capabilities<br>" &
+  "* Package Installation / Removal<br>" &
+  "* Repository Management<br>"
+  
+    ClsGlobal.sSelProcedure = "CRUX"
+    ME.tlActionExp.Adjust
+  ELSE 
+    ClsGlobal.sSelProcedure = ""
+  END IF
+
+END
+
+PUBLIC SUB btNext_Enter()
+
+  ME.btNext.Font.Bold = FALSE
+
+END
+
+PUBLIC SUB btQuit_Enter()
+
+  ME.btQuit.Font.Bold = FALSE
+
+END
+
+PUBLIC SUB MenuQuit_Click()
+
+  FMain.Close
+
+END
+
+PUBLIC SUB MenuNewSrc_Click()
+
+  FMain.Hide
+  FrmSrcToPkg.Center
+  FrmSrcToPkg.Show
+
+END
+
+PUBLIC SUB MenuNewCrux_Click()
+
+  FMain.Hide
+  FrmPorts.Center
+  FrmPorts.Show()
+  
+
+END
+
+PUBLIC SUB MenuEdit_Click()
+
+  FMain.Hide
+  FEditPackage.Center
+  FEditPackage.Show
+
+END
+
+PUBLIC SUB EditPrefs_Click()
+
+  FMain.Hide
+  FSettings.Center
+  FSettings.Show()
+  
+END
+
+PUBLIC SUB HelpAbout_Click()
+
+  ME.Hide
+  AboutVpackager.Show()
+
+END
+
+
+
+PUBLIC SUB Form_Close()
+
+Application.MainWindow.Close
+END
+
+
+

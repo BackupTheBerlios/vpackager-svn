@@ -1,0 +1,75 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' /* The package procedure will be shared between the GNU and CMAKE build types
+
+PUBLIC SUB PACKAGE(sPkgdir AS String)
+  
+   DIM sShellcmd AS String
+  DIM sClear AS Boolean
+    DIM sPkgtype AS String = ClsBuildVars.sType
+   DIM sArch AS String = ClsBuildVars.sArch
+   DIM sRel AS String = ClsBuildVars.sRel
+   DIM sName AS String = ClsBuildVars.sName
+   DIM sVer AS String = ClsBuildVars.sVersion
+   DIM sTag AS String = ClsBuildVars.sTag
+   DIM sDescDest AS String = sPkgdir &/ "install"
+   
+   clsGenScript.PACKAGE_COMMAND = "makeslapt --tlz "
+  sShellcmd = "cd " & sPkgDir & " ; makeslapt --" & sPkgtype & " " & sName & "-" & sVer & "-" & sArch & "-" & sRel & sTag & "." & sPkgtype
+  
+  IF IsDir(sDescDest) = FALSE THEN 
+    MKDIR sDescDest
+  END IF
+  
+  ' insert description into package
+  IF ClsBuildVars.bhasDesc = TRUE THEN 
+    MdlBuild.INSERT_DESC(ClsBuildVars.sSlackDesc, sDescDest)
+  ELSE 
+    MdlMain.WRITE_TO_BUILD_LOG("No description provided.... Proceed to package")
+  END IF
+    
+    mdlSrcBuild.RUN_SHELL(sShellcmd)
+    IF MdlSrcBuild.hproc.State = Process.Running THEN 
+        REPEAT 
+          WAIT 
+        UNTIL 
+    MdlSrcBuild.hproc.State = Process.Stopped
+    END IF
+    sClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+    'MdlSrcBuild.iStepInProcedure = 5
+    FrmBuildView.PbBuildProg.Value = 1
+        
+      IF sClear = TRUE THEN 
+        MdlMain.WRITE_TO_BUILD_LOG("An error occurred in the build process... Please check the build log")
+        RETURN ' STOP HERE.... NOT CLEAR
+      ELSE 
+        ' Ready to go,.... no errors.... 
+        ' ALL DONE
+' Write a script if necessary
+    IF CSettings.bWriteScript = TRUE THEN 
+    MdlMain.WRITE_TO_BUILD_LOG(" + Generating build script")
+    MdlGenScript.GENERATE_BUILD_SCRIPT
+    END IF
+               
+        MdlMain.WRITE_TO_BUILD_LOG(" + Process complete")
+        
+      END IF
+  mdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE) ' this needs to be done regarless of status at this point
+  
+  
+END

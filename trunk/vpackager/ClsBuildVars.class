@@ -1,0 +1,23 @@
+' Gambas class file
+
+STATIC PUBLIC sSrcPath AS String
+STATIC PUBLIC sName AS String
+STATIC PUBLIC sVersion AS String
+STATIC PUBLIC sArch AS String = "i586" ' Apply a default value
+STATIC PUBLIC sRel AS String = "1" ' Default value is 1
+STATIC PUBLIC sTag AS String = "vl59" ' Default value
+STATIC PUBLIC sType AS String = "tlz" ' Default value
+STATIC PUBLIC bhasDesc AS Boolean
+
+
+STATIC PUBLIC sSlackDesc AS String
+
+
+STATIC PUBLIC sConfig AS String = "--prefix=/usr --sysconfdir=/etc --mandir=/usr/man --with-included-gettext" ' This is the entire config string we are assigning a default value here
+STATIC PUBLIC sCFLAGS AS String = "-O2 -march=i586 -mtune=i686" ' Default Compiler flags provided here.. these may be changed by the user
+
+' Global build information variables
+STATIC PUBLIC sBuildType AS String
+STATIC PUBLIC iStep AS Integer ' enumerated build step
+STATIC PUBLIC bAborted AS Boolean ' user has aborted the process
+

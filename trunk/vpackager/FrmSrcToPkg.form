@@ -1,0 +1,163 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,88.875,46)
+  Text = ("")
+  Icon = Picture["Graphics/vpackager.png"]
+  { frPkgInfo Frame
+    MoveScaled(1,17,87,15)
+    Font = Font["DejaVu Sans"]
+    Text = ("Package Settings")
+    { cbPkgTypeSel ComboBox
+      MoveScaled(55,8,12,3)
+      Text = ("")
+      List = [("tlz"), ("tgz")]
+    }
+    { lbPkgType Label
+      MoveScaled(38,8,16,3)
+      Text = ("Package Format")
+    }
+    { cbPkgBuildSel ComboBox
+      MoveScaled(55,3,12,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("")
+      List = [("1"), ("2"), ("3"), ("4"), ("5"), ("6")]
+    }
+    { lbPkgBuild Label
+      MoveScaled(38,3,16,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("Package Release")
+    }
+    { pbLogo PictureBox
+      MoveScaled(69,4,16,6)
+      Font = Font["DejaVu Sans"]
+      Picture = Picture["Graphics/logo_new.png"]
+      Stretch = True
+    }
+    { cbArchSel ComboBox
+      MoveScaled(22,3,11,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("")
+      List = [("i386"), ("i486"), ("i586"), ("i686")]
+    }
+    { lbArch Label
+      MoveScaled(1,3,19,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("System Architecture")
+    }
+    { lbBuildTag Label
+      MoveScaled(1,7,18,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("Package Build Tag")
+    }
+    { cbSelPkgTag ComboBox
+      MoveScaled(22,7,11,3)
+      Font = Font["DejaVu Sans"]
+      Text = ("")
+      List = [("vl58"), ("vl59"), ("vl60"), ("Other")]
+    }
+    { txtCustPkgTag TextBox
+      MoveScaled(1,11,31,3)
+      Visible = False
+      Font = Font["DejaVu Sans"]
+      Text = ("")
+    }
+  }
+  { lbSrc Label
+    MoveScaled(1,1,15,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("Source Archive")
+  }
+  { lbDesc Label
+    MoveScaled(1,34,20,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("Package Description")
+  }
+  { tlSummary TextLabel
+    MoveScaled(1,38,36,7)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+  }
+  { frBuildOpts Frame
+    MoveScaled(1,5,87,11)
+    Font = Font["DejaVu Sans"]
+    Text = ("Build Options")
+    { btViewConfOpts Button
+      MoveScaled(73,3,4,3)
+      ToolTip = ("View available configure options for this application. ( Implies extracting the source )")
+      Text = ("")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dnd-multiple.png"]
+    }
+  }
+  { lbCflags Label
+    MoveScaled(2,11,18,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("Build Flags")
+  }
+  { txtSrcPath TextBox
+    MoveScaled(16,1,50,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+  }
+  { txtConfig TextBox
+    MoveScaled(20,8,53,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+  }
+  { txtSlackDescPath TextBox
+    MoveScaled(21,34,54,3)
+    Text = ("")
+    ReadOnly = True
+  }
+  { TlBuildSum2 TextLabel
+    MoveScaled(40,38,36,7)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+  }
+  { btBrowse Button
+    MoveScaled(67,1,12,3)
+    Font = Font["DejaVu Sans"]
+    ToolTip = ("Select Source Archive to build from.")
+    Text = ("Browse")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-directory.png"]
+  }
+  { btLoadDesc Button
+    MoveScaled(77,34,5,3)
+    Font = Font["DejaVu Sans"]
+    ToolTip = ("Load an existing, and pre-formatted slack-desc file to use in this package.")
+    Text = ("")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-open.png"]
+  }
+  { btNext Button
+    MoveScaled(79,42,9,3)
+    Font = Font["DejaVu Sans"]
+    ToolTip = ("Begin the build process")
+    Text = ("Next")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-go-forward-ltr.png"]
+  }
+  { btCreateDesc Button
+    MoveScaled(83,34,5,3)
+    Font = Font["DejaVu Sans"]
+    ToolTip = ("Create a new description file using the wizard.")
+    Text = ("")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+  }
+  { lbConfig Label
+    MoveScaled(2,8,18,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("Configure Options")
+  }
+  { txtCFlags TextBox
+    MoveScaled(20,11,53,3)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+  }
+  { btBack Button
+    MoveScaled(79,38,9,3)
+    Font = Font["DejaVu Sans"]
+    ToolTip = ("Cancel this operation and go back to the main window.")
+    Text = ("Back")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-stop.png"]
+    Cancel = True
+  }
+}

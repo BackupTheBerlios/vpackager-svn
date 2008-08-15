@@ -1,0 +1,90 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC hSetting AS Settings
+
+PUBLIC FUNCTION READ_SETTINGS(IniKey AS String, DefaultValue AS Variant) AS Variant
+  
+  DIM retval AS Variant
+  hSetting = NEW Settings(CSettings.sSettingsPath &/ CSettings.sSettingsFile)
+  
+  retval = hSetting[IniKey, DefaultValue]
+  RETURN retval
+    
+END
+
+PUBLIC SUB WRITE_SETTINGS(inikey AS String, SetValue AS Variant)
+  
+  DIM hSetting AS Settings
+  hSetting = NEW Settings(CSettings.sSettingsPath &/ CSettings.sSettingsFile)
+  hSetting[inikey] = SetValue
+  
+END
+
+PUBLIC SUB DISPLAY_CURRENT_SETTINGS()
+  
+  ' Component = READ_SETTINGS("<setting>", "Default_Value")
+  FSettings.txtDefTempDir.text = READ_SETTINGS("DEF_TMP_DIR", Global.TMP_DIR)
+  FSettings.txtPackagerID.text = READ_SETTINGS("PACKAGER_ID", Global.sPackagerName)
+  FSettings.cbForceRB.value = READ_SETTINGS("FORCE_REQUIRED_BUILDER", CSettings.bForeceRB)
+  FSettings.cbKeepWork.Value = READ_SETTINGS("KEEP_TMP_WORK", CSettings.bKeepWork)
+  FSettings.cbForceBuild.value = READ_SETTINGS("FORCE_BUILD", Csettings.bForceBuild)
+  FSettings.cbDefSrcLoc.Value = READ_SETTINGS("USE_DEF_SRC_LOC", CSettings.bUseDefSrcLoc)
+  FSettings.txtDefSrcLoc.text = READ_SETTINGS("DEF_SRC_LOC", Global.TMP_DIR)
+  FSettings.cbSaveBackUpCopies.Value = READ_SETTINGS("BACKUP_ORIGINAL_PACKAGES", CEditPackage.bSaveBackupCopy)
+  FSettings.cbWriteScript.Value = READ_SETTINGS("GENERATE_BUILD_SCRIPT", Csettings.bWriteScript)
+  FSettings.cbCopySlackDesc.Value = READ_SETTINGS("EXPORT_DESCRIPTION", Global.bCopySlackDesc)
+  FSettings.cbWinSettings.Value = READ_SETTINGS("REMEMBER_WIN_ATTR", ClsGlobal.bRememberAttr)
+  Fsettings.txtQmakePath.Text = READ_SETTINGS("PATH_TO_QMAKE", "")
+  FSettings.txtTmpEditPath.Text = READ_SETTINGS("TMP_EDIT_DIR", "/tmp/vpackager-edits")
+  
+  
+END
+
+PUBLIC SUB SAVE_SETTINGS()
+  
+  ' WRITE_SETTINGS("<setting>", <component.value>)
+  'IF Fsettings.cbDefSrcLoc.Value = TRUE AND IF FSettings.txtDefSrcLoc.text <> "" THEN 
+   ' ME.WRITE_SETTINGS("DEF_SRC_LOC", FSettings.txtDefSrcLoc.text)
+  'END IF
+  IF FSettings.txtDefTempDir.text <> "" THEN   
+    ME.WRITE_SETTINGS("DEF_TMP_DIR", FSettings.txtDefTempDir.text)
+  END IF
+  IF FSettings.txtPackagerID.text <> "" THEN 
+    ME.WRITE_SETTINGS("PACKAGER_ID", FSettings.txtPackagerID.Text)
+  END IF
+  
+  WRITE_SETTINGS("FORCE_REQUIRED_BUILDER", FSettings.cbForceRB.value)
+  WRITE_SETTINGS("FORCE_BUILD", FSettings.cbForceBuild.value)
+  WRITE_SETTINGS("KEEP_TMP_WORK", FSettings.cbKeepWork.value)
+  WRITE_SETTINGS("DEF_SRC_LOC", Fsettings.txtDefSrcLoc.text)
+  WRITE_SETTINGS("USE_DEF_SRC_LOC", FSettings.cbDefSrcLoc.Value)
+  WRITE_SETTINGS("BACKUP_ORIGINAL_PACKAGES", FSettings.cbSaveBackUpCopies.Value)
+  WRITE_SETTINGS("GENERATE_BUILD_SCRIPT", FSettings.cbWriteScript.Value)
+  WRITE_SETTINGS("EXPORT_DESCRIPTION", FSettings.cbCopySlackDesc.Value)
+  WRITE_SETTINGS("REMEMBER_WIN_ATTR", FSettings.cbWinSettings.Value)
+  WRITE_SETTINGS("PATH_TO_QMAKE", Fsettings.txtQmakePath.text)
+  WRITE_SETTINGS("TMP_EDIT_DIR", Trim(FSettings.txtTmpEditPath.Text))
+  ' write window settings
+  
+  
+END
+
+
+

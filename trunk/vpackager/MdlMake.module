@@ -1,0 +1,47 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' /* THIS MODULE WILL BE SHARED WITH THE GNU AND CMAKE FOR THE MAKE STEP (2)
+
+PUBLIC SUB RUN_MAKE(sBuildDir AS String)
+  
+  DIM sShellcmd AS String
+  DIM sClear AS Boolean
+  sShellcmd = "cd " & sBuildDir & " ; make"
+  
+  mdlSrcBuild.RUN_SHELL(sShellcmd)
+    IF MdlSrcBuild.hproc.State = Process.Running THEN 
+        REPEAT 
+          WAIT 
+        UNTIL 
+    MdlSrcBuild.hproc.State = Process.Stopped
+    END IF
+    sClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+    'MdlSrcBuild.iStepInProcedure = 
+    FrmBuildView.PbBuildProg.Value = 0.55
+      IF sClear = TRUE THEN 
+        MdlMain.WRITE_TO_BUILD_LOG("An error occurred in the build process... Please check the build log")
+        MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE)
+        RETURN ' STOP HERE.... NOT CLEAR
+      ELSE 
+        ' Ready to go,.... no errors.... 
+        ' RUN MAKE INSTALL
+        MdlMain.WRITE_TO_BUILD_LOG(" + Install to temp location")
+        MdlMakeInstall.RUN_MAKEINSTALL(sBuildDir)
+      END IF
+  
+END

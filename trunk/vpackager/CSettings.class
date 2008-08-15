@@ -1,0 +1,41 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC CONST sSettingsFile AS String = "vpackager.conf" ' For Final Release
+PUBLIC CONST sSettingsPath AS String = "/etc" ' For Final Release
+'PUBLIC CONST sSettingsFile AS String = "vpackager.conf"
+'PUBLIC CONST sSettingsPath AS String = "/home/moe"
+
+'GENERAL SETTINGS
+' Default Source Location
+STATIC PUBLIC bUseDefSrcLoc AS Boolean
+STATIC PUBLIC sDefSrcLoc AS String ' Will need to modify the dialog.openfile() procedure to respect this
+' Default Temporary Directory ' TMP dir to use
+STATIC PUBLIC sDefTempDir AS String
+
+
+'CRUXPORTSFORSLACK SETTINGS
+STATIC PUBLIC bForeceRB AS Boolean
+STATIC PUBLIC bForceBuild AS Boolean
+STATIC PUBLIC bKeepWork AS Boolean
+'STATIC PUBLIC bDefSourceDir AS Boolean
+STATIC PUBLIC bWriteScript AS Boolean
+
+'CMAKE qmake path 
+STATIC PUBLIC sQmakePath AS String

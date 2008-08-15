@@ -1,0 +1,27 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+' Holds all the variables for the slack-desc generator
+STATIC PUBLIC sName AS String
+STATIC PUBLIC sVer AS String
+STATIC PUBLIC sShortDesc AS String
+STATIC PUBLIC sLongDesc AS String ' Long description
+STATIC PUBLIC sTmpFilePath AS String ' Temporaty file path, holds it ther euntil the package is actually create, in which case it gets moved
+STATIC PUBLIC sLicense AS String
+STATIC PUBLIC sWEB AS String
+STATIC PUBLIC sAuthor AS String

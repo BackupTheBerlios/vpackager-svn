@@ -1,0 +1,52 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+' ' ' 
+    ' This function will configure gnu sources
+    ' make, make install and package procedures are separate
+PUBLIC SUB GNU_CONFIGURE(sSrcPath AS String)
+  
+  DIM sBuildDir AS String
+  DIM sConfLine AS String
+  DIM sClear AS Boolean
+  sBuildDir = sSrcPath &/ "build"
+    IF IsDir(sBuildDir) = TRUE THEN 
+      SHELL "rm -rf " & sBuildDir
+    END IF
+      SHELL "mkdir -p " & sBuildDir
+    sConfLine = "cd " & sBuildDir & " ; ../configure " & Global.sBuildConfigString
+    MdlMain.WRITE_TO_BUILD_LOG("  + Run configure")
+      MdlSrcBuild.iStepInProcedure = 1
+    mdlSrcBuild.RUN_SHELL(sConfLine)
+    IF MdlSrcBuild.hproc.State = Process.Running THEN 
+        REPEAT 
+          WAIT 
+        UNTIL 
+    MdlSrcBuild.hproc.State = Process.Stopped
+    END IF
+    sClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+        
+      IF sClear = TRUE THEN 
+        MdlMain.WRITE_TO_BUILD_LOG("An error occurred in the build process... Please check the build log")
+        RETURN ' STOP HERE.... NOT CLEAR
+      ELSE 
+        ' Ready to go,.... no errors.... 
+        ' RUN MAKE NOW
+        MdlMain.WRITE_TO_BUILD_LOG(" + Run make")
+        MdlMake.RUN_MAKE(sBuildDir)
+      END IF
+  
+END

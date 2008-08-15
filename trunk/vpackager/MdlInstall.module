@@ -1,0 +1,194 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+PUBLIC FrmInstall AS Form
+
+PUBLIC taInstallProg AS TextArea
+PUBLIC btdone AS Button
+PUBLIC tlBanner AS TextLabel
+PUBLIC hInstall AS Process
+PUBLIC sLog AS String
+PUBLIC pbInstall AS ProgressBar
+PUBLIC tmMonitor AS Timer
+PRIVATE Action AS String
+PRIVATE fGoto AS Form
+PUBLIC SUB Main()
+  
+  'This is for testing ' ME.INSTALL_CREATED_PACKAGE("/usr/ports/contrib/xmms2/xmms2-0.4DrKosmos-i586-1vl59.tlz")
+  
+END
+
+PUBLIC SUB INSTALL_CREATED_PACKAGE(sFullPkgPath AS String, sAction AS String, fRetForm AS Form)
+  DIM sPackageName AS String = File.Name(sFullPkgPath)
+  DIM sPackagePath AS String = File.Dir(sFullPkgPath)
+    
+    IF MdlCruxFunctions.bAborted = TRUE THEN 
+      RETURN ' STOP RIGHT THERE!.. the user has aborted... no need to continue
+    END IF
+    
+    fGoto = fRetForm ' set the exit form
+  FrmInstall = NEW Form AS "MainCont"
+  WITH FrmInstall
+    .Caption = global.sMyname & " Package installer"
+    .Width = 600
+    .Height = 400
+    .border = window.Fixed
+    '.Center
+    .Show()
+    ' Dont show it yet..
+  END WITH 
+  
+  tlbanner = NEW TextLabel(FrmInstall) AS "Banner"
+  WITH tlbanner
+    .Left = frmInstall.Left
+    .y = FrmInstall.top + 8
+    .width = FrmInstall.Width
+    .Height = 40
+      SELECT CASE sAction
+        CASE "install"
+          .text = "Installing " & sPackageName   
+        CASE "uninstall"
+          .Text = "Removing " & sPackageName
+      END SELECT 
+    .BackColor = Color.SelectedBackground
+    .ForeColor = Color.SelectedForeground
+    .Text = "<h3>" & .Text & "</h3>"
+    .Alignment = Align.Center
+    
+  END WITH 
+  
+  pbInstall = NEW ProgressBar(frmInstall) AS "ProgMeter"
+  WITH pbInstall
+  .Label = FALSE
+  .X = FrmInstall.left + 4
+  .y = FrmInstall.top + (8 + tlbanner.Height + 4)
+  .height = 14
+  .width = frmInstall.Width - 10
+  END WITH 
+  taInstallProg = NEW TextArea(FrmInstall) AS "taProg"
+  WITH taInstallProg
+    '.X = ME.pbInstall.Left + 4
+    .x = ME.pbInstall.X
+    '.Y = FrmInstall.top + tlbanner.Height + pbInstall.height + 14
+    .y = ME.pbInstall.y + ME.pbInstall.Height + 4
+    '.Width = FrmInstall.Width - 18
+    .Width = pbInstall.Width
+    .Height = FrmInstall.Height - tlbanner.Height - pbInstall.Height - 55 ' give enough room for a 30 pix high button at the bottom
+    .text = sLog
+    .ReadOnly = TRUE
+  END WITH 
+  btdone = NEW button(FrmInstall) AS "BtnClose"
+  WITH btdone
+  .text = "Done"
+  .Height = 21
+  .Width = 65
+  .picture = picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-stop.png"]
+  .X = taInstallProg.left + (taInstallProg.Width - btdone.Width) '- 2 ' far right
+  .y = taInstallProg.top + taInstallProg.Height + 4 ' down bottom
+  .Visible = TRUE
+  .enabled = FALSE
+  .ForeColor = color.Gray
+  END WITH 
+  FrmInstall.Show
+  ' Fire the install process
+    SELECT CASE sAction
+      CASE "install"
+        hInstall = SHELL "installpkg " & sPackagePath &/ sPackageName & " || echo \'FAILED\'" FOR READ 
+      CASE "uninstall"
+        hInstall = SHELL "removepkg " & sPackageName & " || echo \'FAILED\'" FOR READ 
+    END SELECT 
+    = sAction
+  ' Design and start the timer
+  tmMonitor = NEW Timer AS "Monitor"
+  WITH tmMonitor
+  .Delay = 500
+  .Enabled = TRUE
+  END WITH 
+END
+
+PUBLIC SUB ERROR_CHECKER(sLookIn AS String, sLookFor AS String) AS Boolean
+
+  
+  IF InStr(sLookIn, sLookFor) > 0 THEN 
+    RETURN TRUE
+  ELSE 
+    RETURN FALSE
+  END IF
+  
+END
+
+
+PUBLIC SUB Monitor_timer()
+  
+  IF hInstall.state = process.running THEN 
+  WITH pbInstall
+  .value = .value + 0.05
+    IF .value > 0.99 THEN 
+    .value = 0.05
+    END IF
+  END WITH 
+  ELSE 
+    IF ME.ERROR_CHECKER(ME.taInstallProg.Text, "FAILED") = TRUE THEN 
+      Message.Info("An error has occurred. Please check the log. -- package installer")
+    END IF
+  tmMonitor.Enabled = FALSE
+  pbInstall.value = 1
+  btdone.Enabled = TRUE
+  ' refresh the list to the global variable
+    ClsGlobal.sInstalledPkgsList = ""
+    SHELL "ls -aH /var/log/packages" TO ClsGlobal.sInstalledPkgsList
+  END IF
+END
+
+
+
+PUBLIC SUB BtnClose_click()
+  FrmInstall.Close
+  'Fmain.Show() 
+IF fGoto.name = "FrmPorts" THEN 
+  MdlCruxFunctions.CHANGE_ALL_CONTROLS("Enable")
+END IF
+  fGoto.Show()
+  
+END
+
+
+PUBLIC SUB process_read()
+  
+  DIM sLine AS String
+  DIM sFixedLine AS String
+  READ #LAST, sLine, -256
+  IF Left(sLine, 1) = "|" OR InStr(sLine, "|") > 0 THEN 
+  sFixedLine = Replace(sLine, "|", "")
+  ELSE 
+  sFixedLine = sLine
+  
+  END IF
+  
+  taInstallProg.pos = Len(taInstallProg.text)
+  taInstallProg.Insert(sFixedLine)
+    
+END
+
+  PUBLIC SUB process_error(errormessage AS String)
+  
+  WITH taInstallProg
+    .Pos = Len(.Text)
+    .Insert(errormessage)
+  END WITH 
+  
+END

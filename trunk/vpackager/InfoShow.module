@@ -1,0 +1,67 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+' simply scrolls text across the build screen
+PUBLIC SUB SHOW_BUILD_INFO()
+  
+  DIM sText AS String
+  DIM sPackagename AS String
+  
+  sPackagename = Global.sFullPackageName
+  
+sText = Global.sMyname & " Building " & sPackagename & gb.NewLine &
+"----------------------------------------------------" & gb.NewLine &
+"BASIC PACKAGE CONFIGURATION" & gb.NewLine
+IF ConfigOptions.sInstallPrefix <> "" THEN 
+sText = sText & "--prefix=" & ConfigOptions.sInstallPrefix & gb.NewLine
+END IF
+IF ConfigOptions.sSysConfDir <> "" THEN 
+sText = sText & "--sysconfdir=" & ConfigOptions.sSysConfDir & gb.NewLine
+END IF
+IF ConfigOptions.sBinDir <> "" THEN 
+sText = sText & "--bindir=" & ConfigOptions.sBinDir & gb.NewLine 
+END IF
+IF ConfigOptions.sLibdir <> "" THEN 
+sText = sText & "--libdir=" & ConfigOptions.sLibdir & gb.NewLine
+END IF
+IF ConfigOptions.sMandir <> "" THEN 
+sText = sText & "--mandir=" & ConfigOptions.sMandir & gb.NewLine
+END IF
+IF ConfigOptions.sLocalStateDir <> "" THEN 
+sText = sText & "--localstatedir=" & ConfigOptions.sLocalStateDir & gb.NewLine
+END IF
+IF ConfigOptions.sOtherOpts <> "" THEN 
+sText = sText & 
+"----------------------------------------------------" & gb.NewLine &
+"ADDITIONAL CONFIGURATION" & gb.NewLine & ConfigOptions.sOtherOpts & gb.NewLine & gb.NewLine & 
+"COMPILER FLAGS: " & global.sBuildCFLAGS & gb.NewLine & gb.NewLine &
+"Begin extracting sources" & gb.NewLine 
+
+END IF
+  
+FrmBuildView.taTerm.Clear()
+FrmBuildView.taTerm.Insert(sText)
+FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.text)
+
+ 
+ 
+  
+END
+
+

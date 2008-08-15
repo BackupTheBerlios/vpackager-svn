@@ -1,0 +1,186 @@
+' Gambas class file
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC SUB Form_Open()
+
+  DIM sPkgName AS String = ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &
+  "-" & ClsBuildVars.sArch & "-" & ClsBuildVars.sRel & ClsBuildVars.sTag & "." & ClsBuildVars.sType
+  ME.tlPkgName.text = global.sMyname & " Building " & sPkgName
+  ME.tlPkgName.Font.bold = FALSE
+  ME.Center
+  MdlSrcBuild.bAbort = FALSE
+  
+  IF ClsGlobal.bRememberAttr = TRUE THEN 
+    ME.Top = MSettings.READ_SETTINGS("WINDOWS/BUILDVIEW/TOP", 10)
+    ME.Left = MSettings.READ_SETTINGS("WINDOWS/BUILDVIEW/LEFT", 10)
+    ME.Width = MSettings.READ_SETTINGS("WINDOWS/BUILDVIEW/WIDTH", 800)
+    ME.Height = MSettings.READ_SETTINGS("WINDOWS/BUILDVIEW/HEIGHT", 600)
+  ELSE 
+    ME.Center
+  END IF
+  
+END
+
+PUBLIC SUB btCancel_Click()
+
+  FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.Text)
+  FrmBuildView.taTerm.Insert(gb.newline)
+  MdlMain.WRITE_TO_BUILD_LOG(" OPERATION CANCELLED PER USER REQUEST ... ABORTING BUILD PROCESS")
+  
+  IF ME.btCancel.Text = "Abort" THEN 
+    IF MdlSrcBuild.hproc.State = Process.Running THEN 
+      MdlSrcBuild.bAbort = TRUE
+      MdlSrcBuild.hproc.Kill
+      MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE) ' change all controls
+    END IF
+  ELSE IF ME.btCancel.Text = "Back" THEN 
+    ME.Form_Close()
+    'FrmSrcToPkg.show()
+  END IF
+  
+END
+
+
+
+PUBLIC SUB btSaveLog_Click()
+
+  DIM sBuffer AS String
+  DIM sOutputPath AS String
+  sBuffer = ME.taTerm.Text
+  dialog.Title = "Please select log destination"
+  dialog.filter = ["*.txt", "Plain Text File"]
+  IF dialog.SelectDirectory() THEN RETURN 
+    file.Save(dialog.path &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion & "_log.txt", sBuffer)
+    message.Info("Build log has been saved to " & gb.NewLine &
+    dialog.path &/ ClsBuildVars.sname & "-" & ClsBuildVars.sVersion & "_log.txt")
+
+
+END
+
+PUBLIC SUB Form_Resize()
+
+  WITH ME
+    .taTerm.Resize(ME.ClientWidth - 20, ME.ClientH - (ME.tlPkgName.Height + ME.btCancel.Height + 30))
+    .btNext.Move(ME.ClientWidth - .btNext.Width - 2, ME.ClientHeight - .btNext.Height - 4)
+    .btSaveLog.Move(.btNext.X - .btSaveLog.Width - 4, .btNext.top)
+    .btCancel.Move(.btSaveLog.X - .btCancel.Width - 4, .btNext.top)
+    .PbBuildProg.Move(.taTerm.left, .btNext.top)
+    .tlPkgName.Width = ME.ClientWidth
+    .PbBuildProg.Width = ME.ClientW - (ME.btCancel.Width + ME.btNext.Width + ME.btSaveLog.Width + 20)
+  END WITH
+END
+
+PUBLIC SUB btNext_Click()
+  
+  DIM sPackPath AS String
+  IF InStr(clsGenScript.CONFIG_COMMAND, "python") THEN 
+    sPackPath = ClsGlobal.sTMP_DIR &/ ClsBuildVars.sname & "-" & ClsBuildVars.sVersion &/ "PKG" &/
+    ClsBuildVars.sName & "-" & ClsBuildVars.sVersion & "-" & ClsBuildVars.sArch & "-" & ClsBuildVars.sRel & ClsBuildVars.sTag & "." & ClsBuildVars.sType
+  ELSE 
+  sPackPath = ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build" &/ "PKG" &/
+    ClsBuildVars.sName & "-" & ClsBuildVars.sVersion & "-" & ClsBuildVars.sArch & "-" & ClsBuildVars.sRel & ClsBuildVars.sTag & "." & ClsBuildVars.sType
+  END IF
+
+IF Exist(sPackPath) = TRUE THEN 
+
+  SELECT CASE message.Question("Would you like to install the package now?", "Yes! Install", "No, Save")
+  CASE 1 ' Yes was clicked
+    ' code to install the package goes here
+    
+    MdlInstall.INSTALL_CREATED_PACKAGE()
+    
+  CASE 2 ' User chose to save the package... it will be saved in the same directory as it's source tarball
+    message.Info("Your " & ClsBuildVars.sName & "-" & ClsBuildVars.sversion & " package will be saved to " & gb.NewLine &
+    file.Dir(ClsBuildVars.sSrcPath) &/ file.Name(sPackPath))
+  END SELECT 
+ELSE 
+' Package not found in its place... something went wrong
+message.Warning("Package was not built correctly. Returning to source selection")
+'ME.CLOSE 
+FrmSrcToPkg.Show()
+END IF
+FrmBuildView.Close
+ClsBuildVars.bAborted = FALSE
+END
+
+PUBLIC SUB tmBuildMon_Timer()
+
+DIM sBuildType AS String = MdlBuild.sBuildType
+DIM iBuildState AS Integer = MdlBuild.iBuildState
+DIM bClear AS Boolean
+DIM iLast AS Integer
+
+iLast = MdlBuild.QUICK_ERROR_CHECK(FrmBuildView.taTerm.text, "FAILED")
+  SELECT CASE iLast
+    CASE 0 ' Clear for next step
+      bClear = TRUE
+    CASE ELSE 
+      bClear = FALSE
+  END SELECT 
+  
+  IF iBuildState = 0 THEN ' Source has been extracted, lets find out what type it is
+      MdlBuild.GUESS_SRC_TYPE(ClsGlobal.sTMP_DIR &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion &/ "build")
+  ELSE 
+      SELECT CASE sBuildType
+        CASE "GNU"
+            SELECT CASE iBuildState
+              CASE 1
+                MdlBuild.BUILD_C(ClsBuildVars.sName, ClsBuildVars.sVersion, ClsBuildVars.sSlackDesc, 2)
+              CASE 2
+                MdlBuild.BUILD_C(ClsBuildVars.sName, ClsBuildVars.sVersion, ClsBuildVars.sSlackDesc, 3)
+            END SELECT 
+      END SELECT 
+      
+  END IF
+
+END
+
+
+PUBLIC SUB tmProcMon_Timer()
+DIM bclear AS Boolean ' will determine if we can continue or not
+' This timer will simply monitor the process, to enable / disable controls accordingly
+
+IF MdlSrcBuild.hproc.State = Process.Running THEN 
+  MdlSrcBuild.TOGGLE_BUILD_CANCEL(TRUE)
+ELSE 
+  ME.tmProcMon.Enabled = FALSE
+  MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE)
+END IF
+    bclear = MdlSrcBuild.ERROR_TEST("FAILED", ME.taTerm.Text)
+      ' true = ERROR IS FOUND
+      ' false = clear
+    IF bclear = TRUE OR MdlSrcBuild.bAbort = TRUE THEN 
+      ME.btNext.Enabled = FALSE
+      ME.btNext.ForeColor = Color.Gray
+    END IF
+
+END
+
+PUBLIC SUB Form_Close()
+
+  IF ClsGlobal.bRememberAttr = TRUE THEN 
+    MSettings.WRITE_SETTINGS("WINDOWS/BUILDVIEW/TOP", ME.TOP)
+    MSettings.WRITE_SETTINGS("WINDOWS/BUILDVIEW/LEFT", ME.LEFT)
+    MSettings.WRITE_SETTINGS("WINDOWS/BUILDVIEW/HEIGHT", ME.Height)
+    MSettings.WRITE_SETTINGS("WINDOWS/BUILDVIEW/WIDTH", ME.Width)
+  END IF
+  ME.Close()
+  FrmSrcToPkg.Show()
+
+END

@@ -1,0 +1,179 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' PURPOSE OF THIS MODULE: Very simple.. Find and install any dependancies using slapt-get
+
+PUBLIC sToPortAsDep AS String
+
+PUBLIC SUB SLAPT_GET_SEARCH(sRawlist AS String, sDepsFor AS String)
+  
+  
+  DIM sItem AS String
+  DIM sList AS String[]
+  DIM i AS Integer
+  DIM sResult AS String
+  DIM sNotFound AS String
+  
+  FCruxBuildDetails.Hide
+  FrmPorts.Show
+  FrmPorts.Center
+  
+    sList = Split(sRawlist, " ")
+  FOR i = 0 TO sList.Count - 1
+    sItem = Trim(sList[i])
+      FrmPorts.taShell.Insert(gb.NewLine & gb.NewLine)
+      'SHELL "slapt-get -i " & Trim(sItem) TO sResult
+      'sResult = SHELL "slapt-get -i " & Trim(sItem) FOR READ 
+      SHELL "slapt-get -i " & Trim(sItem) TO sResult
+       FrmPorts.taShell.Insert(Trim(sResult))
+       'Message.Info(sResult)
+        'IF InStr(sResult, "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.") > 0 THEN 
+        '  sNotFound = sNotFound & sItem
+        '    FrmPorts.taShell.Insert(gb.NewLine & sItem & " not found in repositories")
+        'END IF
+          REPEAT 
+            IF FrmPorts.tmProcMon.Enabled = FALSE THEN 
+              MdlCruxFunctions.LAUNCH("slapt-get -i " & sItem, FALSE, TRUE, sItem)
+            ELSE 
+              WAIT 
+            END IF
+          UNTIL 
+            FrmPorts.tmProcMon.Enabled = FALSE
+              
+      sResult = ""
+    NEXT 
+        
+  sNotFound = Trim(ME.sToPortAsDep)
+  IF Len(sNotFound) > 0 THEN 
+    ' There are unresolved deps, go to ports now
+      ME.PORT_GET_DEPS(sNotFound, ClsCrux.sName)
+  ELSE 
+    ' We are clear to continue building
+    FCruxBuildDetails.bBypassDeps = TRUE
+    FCruxBuildDetails.btBuild_click()
+  END IF
+END
+
+PUBLIC SUB PORT_GET_DEPS(sRawlist AS String, sDepsFor AS String)
+  
+  DIM sList AS String[]
+  DIM sPortList AS String[]
+  DIM ii AS Integer
+  DIM sEntry AS String
+  DIM sPar AS String
+  DIM sChild AS String
+  DIM sRootDir AS String
+  DIM sItem AS String
+  DIM i AS Integer
+  DIM sNotFound AS String
+  
+  ' The massive list is an array separated by a "@" char
+  ' each item in the array is divided into 2 parts ... parent!child
+  FCruxBuildDetails.Hide
+  FrmPorts.Show
+  FrmPorts.Center
+  
+    sList = Split(sRawlist, " ")
+    sPortList = Split(ClsCrux.sPortRawList, "@")
+      FOR i = 0 TO sList.count - 1
+        sItem = Trim(sList[i])
+          ' search in the massive array
+          IF InStr(ClsCrux.sPortRawList, sItem) THEN ' Found a possible match let's go get it
+            FOR ii = 0 TO sPortList.Count - 1
+              sEntry = Trim(sPortList[ii])
+                sPar = Left(sEntry, InStr(sEntry, "!") - 1)
+                sChild = Right(sEntry, Len(sEntry) - InStr(sEntry, "!"))
+                IF Trim(sChild) = Trim(sItem) THEN 
+                  'Message.Info(sChild & " | " & sItem)
+                  ' I've found a match!
+                  ' build it
+                  FCruxBuildDetails.Minimized = TRUE
+                  FrmPorts.Show()
+                  
+                  WITH FrmPorts.taShell
+                    .Pos = Len(.Text)
+                    .Insert(gb.NewLine & gb.NewLine &
+                      "Resolve missing deps using ports" & gb.NewLine)
+                  END WITH 
+                      REPEAT 
+                        IF FrmPorts.tmProcMon.Enabled = FALSE AND MdlCruxFunctions.bAborted <> TRUE THEN 
+                    sRootDir = ME.FIND_MY_ROOT_DIR(sPar)
+                    MdlCruxFunctions.LAUNCH("cd " & sRootDir &/ sChild & " ; export VL_PACKAGER=" & 
+                    Global.sPackagerName & " ; pkgmk -d -i ", TRUE, TRUE, ClsCrux.sName)
+                        ELSE 
+                          WAIT 
+                        END IF
+                    UNTIL 
+                      FrmPorts.tmProcMon.Enabled = FALSE
+                                      
+                END IF
+            NEXT 
+          
+          ELSE  ' no match found
+          sNotFound = sNotFound & " " & sItem
+          FrmPorts.taShell.Insert(gb.NewLine & sItem & " Not found in ports")
+          END IF
+      NEXT 
+        
+    sNotFound = Trim(sNotFound)
+    IF Len(sNotFound) > 0 THEN 
+      ' still some unresolved deps... ask the user what to do
+        SELECT CASE Message.Question("Some dependancies for " & ClsCrux.sName & " cannot be resolved. Continuing " &
+        "could result in an unusable " & ClsCrux.sName & " install." & gb.NewLine & 
+        "Would you like to ignore the missing dependancies and continue anyway?", "Yes", "No")
+        CASE 1 ' yes
+          FCruxBuildDetails.bBypassDeps = TRUE
+          FCruxBuildDetails.btBuild_click()
+        CASE 2
+          RETURN ' stop here
+        END SELECT 
+    ELSE 
+     ' continue the build process
+     FCruxBuildDetails.bBypassDeps = TRUE
+     FCruxBuildDetails.btBuild_click() ' trigger the build again.
+    END IF
+        
+            
+  
+  
+END
+
+PUBLIC SUB FIND_MY_ROOT_DIR(sRepo AS String) AS String 
+  
+  DIM sRepFile AS String
+  DIM sFile AS String[]
+  DIM sLine AS String
+  DIM sRootDir AS String
+  DIM i AS Integer
+    
+  
+  IF Exist("/etc/ports" &/ sRepo & ".httpup") THEN
+    sRepFile = DConv(File.Load("/etc/ports" &/ sRepo & ".httpup"))
+  ELSE IF Exist("/etc/ports/disabled" &/ sRepo & ".httpup") THEN 
+    sRepFile = DConv(File.Load("/etc/ports/disabled" &/ sRepo & ".httpup"))
+  END IF
+  sFile = Split(sRepFile, gb.NewLine)
+    FOR i = 0 TO sFile.Count - 1
+      sLine = sFile[i]
+        IF Left(sLine, Len("ROOT_DIR")) = "ROOT_DIR" THEN 
+          sRootDir = Right(sLine, Len(sLine) - InStr(sLine, "="))
+        END IF
+    NEXT 
+  
+  RETURN sRootDir
+  
+END

@@ -1,0 +1,32 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,82,59)
+  Font = Font["Bitstream Charter"]
+  Text = ("")
+  Border = Window.Fixed
+  { tlBanner TextLabel
+    MoveScaled(1,1,80,5)
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("")
+    Alignment = Align.Center
+    Border = Border.Plain
+  }
+  { tlAbout TextLabel
+    MoveScaled(1,7,80,47)
+    Font = Font["DejaVu Sans"]
+    Text = ("<h2>PACKAGE BUILDER</h2>\nvpackager is designed to automate the software building / packaging and installation process on VectorLinux. It may work slackware and othe its derivates, but it's not guaranteed, as the program is developed around VectorLinux.<br>\n<h3>Features include but not limited to:</h3>\nCompiling a package a compressed source archive (.tar.gz or .tar.bz2). This feature will build most applications including CMake and python sources* <br><br>\n\nA cruxports4slack front-end that can do most operations allowed by the cruxports4slack set of tools plus the hability to resolve dependancies. A great and easy way to build and install software. <br>\n\nThis program may be redistributed under the terms of the <a href=http://www.gnu.org/license/lgpl.txt>GNU GPL (Version 3) </a> <br>\n\n<a href=http://vpackager.googlecode.com> http://vpackager.googlecode.com</a>\n<br>\nBugs are to be reported at <a href=http://code.google.com/p/vpackager/issues>http://code.google.com/p/vpackager/issues</a>\n<br>\n<br>\n* Packaging for CMake and Python sources is still experimental.<br>\nCopyright (c) 2007 Moises Henriquez <M0E.lnx_at_gmail.com> <br>\n\n\n\n")
+    Border = Border.Etched
+  }
+  { btClose Button
+    MoveScaled(72,55,9,3)
+    Text = ("Close")
+    Picture = Picture["icon:/16/cancel"]
+  }
+  { pvMyLogo PictureBox
+    MoveScaled(57,45,22,8)
+    Picture = Picture["Graphics/logo_new.png"]
+    Stretch = True
+  }
+}

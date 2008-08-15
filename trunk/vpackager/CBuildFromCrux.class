@@ -1,0 +1,57 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+STATIC PUBLIC sPortList AS String[]
+STATIC PUBLIC sRawPortList AS String
+
+' Read the config files to see where the ports are located
+STATIC PUBLIC FileList AS String ' ls /etc/ports/ | grep httpup
+STATIC PUBLIC PortsPath AS String ' base path to the ports (cat /etc/ports/<file>.httpup | grep ROOT_DIR)
+
+' Port Search
+STATIC PUBLIC sResults AS String
+STATIC PUBLIC sPortSearchResult AS String[]
+
+' Selected Port
+STATIC PUBLIC sPortName AS String
+STATIC PUBLIC sPortRootDir AS String
+STATIC PUBLIC sRepoName AS String
+STATIC PUBLIC bHasBeenBuilt AS Boolean ' if the port has been built, there will be source files and packages in this dir
+STATIC PUBLIC bHasmd5sum AS Boolean ' if md5sum exsists
+STATIC PUBLIC bhasDescription AS Boolean
+STATIC PUBLIC sPathToDesc AS String
+ 
+
+' Build INfo
+STATIC PUBLIC sCruxName AS String
+STATIC PUBLIC sCruxVer AS String
+STATIC PUBLIC sCruxArch AS String ' not needed ?
+STATIC PUBLIC sCruxTag AS String = "vl59"
+STATIC PUBLIC sCruxRelease AS String ' From the build file
+STATIC PUBLIC sCruxFuturePackage AS String
+STATIC PUBLIC bInstallAfterBuild AS Boolean
+STATIC PUBLIC bForce AS Boolean
+STATIC PUBLIC bRequiredbuilder AS Boolean
+STATIC PUBLIC bIgnoreMd5Sum AS Boolean ' ignore md5sum
+
+' Root Dirs
+STATIC PUBLIC sEnabledList AS String
+STATIC PUBLIC sDisabledList AS String
+STATIC PUBLIC sRootDirList AS String = sEnabledList & sDisabledList
+
+

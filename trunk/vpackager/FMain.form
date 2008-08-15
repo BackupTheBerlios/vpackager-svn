@@ -1,0 +1,113 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,80,50)
+  Text = ("")
+  Icon = Picture["Graphics/vpackager.png"]
+  Border = Window.Fixed
+  { Menu Menu
+    Text = ("Menu")
+    { MenuNew Menu
+      Text = ("New Package")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/apps/bonobo-component-browser.png"]
+      { MenuNewSrc Menu
+        Text = ("From Source")
+        Picture = Picture["Icons/nuoveXT-1.6/16x16/mimetypes/gnome-mime-application-x-tar.png"]
+      }
+      { MenuNewCrux Menu
+        Text = ("From Cruxports4slack")
+        Picture = Picture["icon:/16/linux"]
+      }
+    }
+    { MenuEdit Menu
+      Text = ("Edit Existing Package")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-edit.png"]
+      Enabled = False
+      Visible = False
+    }
+    { MenuSep1 Menu
+      Text = ("")
+    }
+    { MenuQuit Menu
+      Text = ("Exit")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+    }
+  }
+  { MenuSettings Menu
+    Text = ("Edit")
+    { EditPrefs Menu
+      Text = ("Preferences")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-preferences.png"]
+    }
+  }
+  { MenuHelp Menu
+    Text = ("Help")
+    { HelpPkg Menu
+      Text = ("About packaging")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dialog-question.png"]
+      Visible = False
+    }
+    { HelpAbout Menu
+      Text = ("About vpackager")
+      Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-dialog-question.png"]
+    }
+    { menutest Menu
+      Text = ("Egg")
+      Visible = False
+    }
+  }
+  { TextLabel1 TextLabel
+    MoveScaled(-1,0,81,8)
+    Font = Font["DejaVu Sans,+3"]
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("VPACKAGER MAIN MENU")
+    Alignment = Align.Center
+    Border = Border.Plain
+  }
+  { pbActLogo PictureBox
+    MoveScaled(1,1,16,6)
+    Background = Color.SelectedBackground
+    Picture = Picture["Graphics/logo_sm.png"]
+    Stretch = True
+  }
+  { pnContents Panel
+    MoveScaled(1,9,78,34)
+    Border = Border.Sunken
+    { rbEdit RadioButton
+      MoveScaled(1,10,32,4)
+      Text = ("Make changes to existing package")
+    }
+    { rbNewSrc RadioButton
+      MoveScaled(1,2,35,3)
+      Text = ("Build / Install from compressed source")
+    }
+    { rbNewCrux RadioButton
+      MoveScaled(1,6,34,3)
+      Text = ("Build / Install from cruxports4slack")
+    }
+    { svExp ScrollView
+      MoveScaled(39,2,38,30)
+      Arrangement = Arrange.Fill
+      Border = False
+      { tlActionExp TextLabel
+        MoveScaled(3,2,34,24)
+        Expand = True
+        AutoResize = True
+        Text = ("")
+      }
+    }
+  }
+  { btNext Button
+    MoveScaled(59,43,9,2)
+    Text = ("Next")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-go-forward-ltr.png"]
+    Default = True
+  }
+  { btQuit Button
+    MoveScaled(69,43,9,2)
+    Text = ("Quit")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+    Cancel = True
+  }
+}

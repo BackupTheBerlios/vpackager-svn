@@ -1,0 +1,30 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+' ENABLE / DISABLE REPOS
+STATIC PUBLIC CONST sEnabledPath AS String = "/etc/ports" ' path to enabled repos
+STATIC PUBLIC sEnabledRepos AS String ' List of enabled repos
+STATIC PUBLIC CONST sDisabledPath AS String = "/etc/ports/disabled" ' path to disabled repos
+STATIC PUBLIC sDisabledList AS String ' List of disabled repos
+
+' Current Selection
+STATIC PUBLIC sSelectedRepo AS String
+STATIC PUBLIC bIsDisabled AS Boolean
+STATIC PUBLIC sRepoFile AS String ' Entire file
+STATIC PUBLIC sRepoSrcUrl AS String ' the URL on the file
+

@@ -1,0 +1,48 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,80,53)
+  Text = ("")
+  { taTerm TextArea
+    MoveScaled(1,6,78,39)
+    Font = Font["DejaVu Sans"]
+    Text = ("")
+    ReadOnly = True
+  }
+  { tlPkgName TextLabel
+    MoveScaled(0,1,80,4)
+    Font = Font["DejaVu Sans,+2"]
+    Background = Color.SelectedBackground
+    Foreground = Color.SelectedForeground
+    Text = ("")
+    Alignment = Align.Center
+    Border = Border.Plain
+  }
+  { PbBuildProg ProgressBar
+    MoveScaled(1,49,39,3)
+    Label = False
+  }
+  { btCancel Button
+    MoveScaled(41,49,10,3)
+    ToolTip = ("Abort Build")
+    Text = ("Cancel")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+    Border = False
+  }
+  { btSaveLog Button
+    MoveScaled(52,49,15,3)
+    Text = ("Save Output")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-save-as.png"]
+    Border = False
+  }
+  { btNext Button
+    MoveScaled(68,49,9,3)
+    Text = ("Next")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-go-forward-ltr.png"]
+    Border = False
+  }
+  { tmProcMon #Timer
+    #X = 20
+    #Y = 70
+  }
+}

@@ -1,0 +1,30 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,109,53)
+  Font = Font["Bitstream Charter"]
+  Text = ("")
+  Icon = Picture["Icons/nuoveXT-1.6/16x16/apps/bonobo-component-browser.png"]
+  { tlLabel TextLabel
+    MoveScaled(2,1,105,3)
+    Text = ("")
+  }
+  { taInstallProg TextArea
+    MoveScaled(1,5,107,43)
+    Text = ("")
+  }
+  { btClose Button
+    MoveScaled(98,49,10,2)
+    Enabled = False
+    Text = ("Close")
+    Picture = Picture["Icons/nuoveXT-1.6/16x16/gtk/gtk-cancel.png"]
+  }
+  { pbFakeInstall ProgressBar
+    MoveScaled(2,49,92,3)
+    Font = Font["-1"]
+  }
+  { tmMonitorInstall #Timer
+    #X = 21
+    #Y = 42
+  }
+}

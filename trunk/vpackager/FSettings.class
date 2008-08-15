@@ -1,0 +1,140 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC SUB cbDefSrcLoc_Click()
+'CSettings.bDefSourceDir = ME.cbDefSrcLoc.Value
+csettings.bUseDefSrcLoc = ME.cbDefSrcLoc.Value
+  IF cbDefSrcLoc.value = TRUE THEN 
+  ME.txtDefSrcLoc.Visible = TRUE
+  ME.btSelDefSrcLoc.visible = TRUE
+  ELSE 
+  ME.txtDefSrcLoc.Visible = FALSE
+  ME.btSelDefSrcLoc.Visible = FALSE
+  END IF
+  
+
+END
+
+PUBLIC SUB btSelDefSrcLoc_Click()
+
+  Dialog.Title = "Select default location for source files"
+  dialog.path = user.Home
+  IF dialog.SelectDirectory() THEN RETURN 
+  ME.txtDefSrcLoc.text = dialog.Path
+  
+
+END
+
+PUBLIC SUB btSelDefTmpDir_Click()
+
+  dialog.path = user.Home
+  Dialog.Title = "Select Default Temporary Build Directory"
+  IF dialog.SelectDirectory() THEN RETURN 
+  ME.txtDefTempDir.text = dialog.Path
+
+END
+
+PUBLIC SUB Form_Open()
+ME.Caption = Global.sMyname & " Preferences"
+  MSettings.DISPLAY_CURRENT_SETTINGS()
+
+END
+
+PUBLIC SUB btApply_Click()
+
+  MSettings.SAVE_SETTINGS()
+  ME.Close
+
+END
+
+PUBLIC SUB cbForceRB_Click()
+
+  CSettings.bForeceRB = cbForceRB.Value
+
+END
+
+
+
+PUBLIC SUB cbKeepWork_Click()
+
+  CSettings.bKeepWork = ME.cbKeepWork.Value
+
+END
+
+PUBLIC SUB cbForceBuild_Click()
+CSettings.bForceBuild = ME.cbForceBuild.Value
+  
+
+END
+
+PUBLIC SUB Form_Close()
+ApplySettings.apply_settings()
+'ME.Close()
+FMain.Show
+
+
+END
+
+PUBLIC SUB cbSaveBackUpCopies_Click()
+
+  CEditPackage.bSaveBackupCopy = ME.cbSaveBackUpCopies.Value
+
+END
+
+PUBLIC SUB cbWriteScript_Click()
+
+  CSettings.bWriteScript = ME.cbWriteScript.Value
+
+END
+
+PUBLIC SUB cbCopySlackDesc_Click()
+
+  Global.bCopySlackDesc = ME.cbCopySlackDesc.Value
+
+END
+
+
+PUBLIC SUB btSelQmake_Click()
+'MdlFindQmake.FIND_QMAKE()
+ME.Hide
+FrmSelQmake.fRetTo = ME
+FrmSelQmake.Show
+
+END
+
+PUBLIC SUB cbWinSettings_Click()
+
+  IF ME.cbWinSettings.Value = TRUE THEN 
+    ClsGlobal.bRememberAttr = TRUE
+  ELSE 
+    ClsGlobal.bRememberAttr = FALSE
+  END IF
+  
+
+END
+
+PUBLIC SUB btSelQmake2_Click()
+
+  dialog.Title = "Select Temporary directory for editing packages"
+  dialog.Path = user.Home
+  IF dialog.SelectDirectory() THEN RETURN 
+    ME.txtTmpEditPath.Text = dialog.Path
+  
+
+END

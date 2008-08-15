@@ -1,0 +1,290 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+PUBLIC bBypassDeps AS Boolean
+PRIVATE sPkgmkOpts AS String
+'PRIVATE sMissingDeps AS String
+PUBLIC SUB cbTag_Click()
+
+  CBuildFromCrux.sCruxTag = Trim(ME.cbTag.text)
+  ME.verify_package()
+  
+END
+
+PUBLIC SUB Form_Open()
+
+IF CSettings.bForeceRB = TRUE THEN 
+  ME.bforcerb.Value = TRUE
+END IF
+IF CSettings.bForceBuild = TRUE THEN 
+  ME.bForceBuild.Value = TRUE
+END IF
+IF CSettings.bKeepWork = TRUE THEN 
+  ME.bkeepwork.Value = TRUE
+END IF
+
+  WITH ME
+    .Caption = Global.sMyname & " Choose install Options"
+    .cbInstallb_Click()
+    .rbVl59.Value = TRUE
+    .rbVl59.SetFocus
+    .Center
+    .cbInstallb.Value = TRUE
+    
+  END WITH
+    ClsCrux.sTag = "vl59"
+    ME.SET_PACKAGE_NAME()
+  
+
+END
+
+PUBLIC SUB SET_PACKAGE_NAME()
+  
+  DIM sFullName AS String
+  sFullName = ClsCrux.sName & "-" & ClsCrux.sVersion & "-" & "i586" & "-" & ClsCrux.sRelease & ClsCrux.sTag & ".tlz"
+  ME.lbPkgName.Text = "<h3>" & sFullName & "</h3>"
+  ME.lbPkgName.Alignment = Align.normal
+  ME.lbPkgName.Alignment = Align.Center
+  
+  
+  
+END
+
+
+
+PUBLIC SUB cbInstallb_Click()
+
+  ClsCrux.binstall = ME.cbInstallb.Value
+
+  
+END
+
+PUBLIC SUB verify_package()
+  
+  DIM sName AS String
+  DIM sVer AS String
+  DIM sArch AS String
+  DIM sBuild AS String
+  DIM sTag AS String
+  DIM sPackageName AS String
+  
+  sName = CBuildFromCrux.sCruxName
+  sVer = CBuildFromCrux.sCruxVer
+  sArch = CBuildFromCrux.sCruxArch
+  sBuild = CBuildFromCrux.sCruxRelease
+  sTag = CBuildFromCrux.sCruxTag
+  
+  sPackageName = sName & "-" & sVer & "-" & sArch & "-" & sBuild & sTag & ".tlz"
+  CBuildFromCrux.sCruxFuturePackage = sPackageName ' Set the good package name
+  
+  ME.lbPkgName.text = sPackageName
+  
+END
+
+
+PUBLIC SUB Button1_Click()
+
+  ME.Close
+  MdlCruxFunctions.CHANGE_ALL_CONTROLS("Enable")
+  FrmPorts.Show
+
+END
+
+
+
+
+PUBLIC SUB GOTO_DEP_RESOLVE()
+DIM sUnmetDeps AS String
+sUnmetDeps = MdlCruxFunctions.DEP_CHECKER(ClsCrux.sDeps, FALSE)
+sUnmetDeps = Trim(sUnmetDeps)
+
+'FBuildFromCrux.Minimized = TRUE
+FrmPorts.Raise
+FrmPorts.Center
+FrmPorts.Show()
+  IF Len(sUnmetDeps) > 0 THEN 
+    ' go to slapt-get from here
+    MdlSlaptDeps.SLAPT_GET_SEARCH(sUnmetDeps, ClsCrux.sName)
+  ELSE 
+    ME.bBypassDeps = TRUE
+    ME.btBuild_Click()
+  END IF
+
+
+END
+
+
+
+
+PUBLIC SUB btBuild_Click()
+' Build the port
+  DIM sTODO AS String
+  DIM sRoot AS String = ClsCrux.sWrkgRootDir
+  DIM sApp AS String = ClsCrux.sName
+  
+  
+  DIM sOptions AS String = sPkgmkOpts ' will need to add a "-d" by default... this is forced.
+  DIM sPkgname AS String = ClsCrux.sName & "-" & ClsCrux.sVersion & "-" & "i586" & "-" & ClsCrux.sRelease & ClsCrux.sTag & ".tlz"
+  
+  ' clear the text area
+  FrmPorts.taShell.Clear()
+  
+  IF MdlCruxFunctions.bAborted = TRUE THEN 
+    RETURN ' STOP THE PROCESS>>> THE USER CHOSE TO ABORT
+  END IF
+  
+   ' IMPORTANT
+   ' RUN A DEPENDANCY CHECK BEFORE PROCEEDING (IF THE USER CHOSE TO RESOLVE DEPENDANCIES)
+   ME.Hide
+   FrmPorts.Show()
+   FrmPorts.taShell.Clear()
+    IF ME.bBypassDeps = FALSE THEN 
+   
+    'sUnmetDeps = ""
+      IF ME.bDepRes.Value = TRUE THEN 
+          'PRINT "attempt to resolve deps"
+          'PRINT "Dependancies: " & ClsCrux.sDeps
+          
+        ME.GOTO_DEP_RESOLVE()
+                    
+      ELSE ' User chose not to resolve deps
+            
+            GOTO PROCEED
+      END IF
+    ELSE 
+    GOTO PROCEED 
+   'END IF
+   
+
+PROCEED:
+  IF bBypassDeps = FALSE THEN 
+
+FrmPorts.taShell.Insert("Resuming " & ClsCrux.sName & " build ...")
+  ELSE 
+  FrmPorts.taShell.Insert(gb.NewLine & " + Begin building " & ClsCrux.sname)
+END IF
+
+  IF ME.cbInstallb.Value = TRUE AND ME.bForceBuild.Value = FALSE THEN 
+    IF Exist(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ sPkgname) THEN
+      'IF MdlCruxFunctions.PROBE_PACKAGE_EXISTANCE(ClsCrux.sWrkgRootDir, ClsCrux.sName) = TRUE THEN 
+      SELECT CASE Message.Question("A package for " & ClsCrux.sName & " is already built." & gb.NewLine &
+        "Would you like to install the existing package?", "Yes", "No")
+          CASE 1
+          'FrmPorts.taShell.Insert(gb.NewLine & "Installing exisgint package for " & ClsCrux.sName & " from " & ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ sPkgname)
+            FrmPorts.Minimized = TRUE ' hide the main window for now
+            ME.Hide ' hide this window too
+            MdlInstall.INSTALL_CREATED_PACKAGE(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ sPkgname, "install", FrmPorts)
+            MdlInstall.FrmInstall.SetFocus
+            MdlInstall.FrmInstall.Center
+           'PRINT sTODO
+           RETURN 
+          CASE 2
+            Message.Info("Please check the \"Install after build\" and the \"Force build\" options to re-build this package")
+            MdlCruxFunctions.CHANGE_ALL_CONTROLS("Enable") ' enable the controls on the window
+            FCruxBuildDetails.Close()
+            RETURN 
+            
+      END SELECT 
+    'END IF
+    ELSE 
+    sTODO = "cd " & ClsCrux.sWrkgRootDir &/ ClsCrux.sName & "; export VL_PACKAGER=" & Global.sMyname & "; pkgmk -d " & Trim(sOptions)
+       
+  END IF
+  ELSE 
+  
+  sTODO = "cd " & ClsCrux.sWrkgRootDir &/ ClsCrux.sName & "; export VL_PACKAGER=" & Global.sMyname & "; pkgmk -d " & Trim(sOptions)
+  
+END IF
+  MdlCruxFunctions.LAUNCH(sTODO, TRUE, FALSE, ClsCrux.sName)
+END IF
+
+ME.Hide
+'FrmPorts.taShell.Clear()
+'FrmPorts.taShell.Insert(gb.NewLine & gb.NewLine & sTODO)
+FrmPorts.Show()
+
+
+END
+
+
+
+PUBLIC SUB cbIgnoreMd5sum_Click()
+
+  CBuildFromCrux.bIgnoreMd5Sum = ME.cbIgnoreMd5sum.Value
+
+END
+
+PUBLIC SUB targetvl_click()
+  
+  DIM sChoice AS String
+  sChoice = LAST.tag
+  ClsCrux.sTag = sChoice
+  ME.SET_PACKAGE_NAME() ' update the package name on click
+  
+END
+
+
+PUBLIC SUB txtOther_KeyRelease()
+
+  ClsCrux.sTag = Trim(ME.txtOther.text)
+  ME.SET_PACKAGE_NAME() ' update the package name
+
+END
+
+PUBLIC SUB cruxopts_click()
+   
+  ' This will pickup the build options and throw them in a varaible
+  ' The code is not pretty, but it works.
+  DIM sTemOpt AS String
+  
+  IF ME.bClean.Value = TRUE THEN 
+    sTemOpt = sTemOpt & bClean.tag & Space(1)
+  END IF
+  IF ME.bForceBuild.Value = TRUE THEN 
+    sTemOpt = sTemOpt & bForceBuild.Tag & Space(1)
+  END IF
+  IF ME.bforcerb.Value = TRUE THEN 
+    sTemOpt = sTemOpt & bforcerb.Tag & Space(1)
+  END IF
+  IF ME.bkeepwork.Value = TRUE THEN 
+    sTemOpt = sTemOpt & bkeepwork.Tag & Space(1)
+  END IF
+  IF ME.cbIgnoreMd5sum.Value = TRUE THEN 
+    sTemOpt = sTemOpt & cbIgnoreMd5sum.Tag & Space(1)
+  END IF
+  
+  sTemOpt = Trim(sTemOpt)
+ sPkgmkOpts = Trim(sTemOpt)
+ 'Message.Info(sPkgmkOpts)   
+  
+END
+
+
+PUBLIC SUB bDepRes_Click()
+
+  ClsCrux.bResDeps = ME.bDepRes.Value
+
+END
+
+PUBLIC SUB Form_Close()
+
+  ME.Close
+  FrmPorts.Show()
+  
+  
+
+END

@@ -1,0 +1,80 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+' VPACKAGER CONSTANTS
+STATIC PUBLIC CONST sMyname AS String = "vpackager"
+STATIC PUBLIC CONST sMyVer AS String = "1.0.12"
+
+
+' Global variables will go here
+
+STATIC PUBLIC sAPP AS String
+STATIC PUBLIC sSourceFile AS String
+STATIC PUBLIC sFullSourcePath AS String
+STATIC PUBLIC sVer AS String
+STATIC PUBLIC sSeparator AS String
+STATIC PUBLIC TMP_DIR AS String = "/tmp/vpackager-builds" ' predefined for now, but will need to be adjustable later
+STATIC PUBLIC sDefSrcDir AS String
+STATIC PUBLIC sBuildBuffer AS String ' Entire build buffer
+STATIC PUBLIC sCurrentStepBuffer AS String ' buffer for current build step
+STATIC PUBLIC sTmpSourcePath AS String '= TMP_DIR & sAPP & "-" & sVer ' Full path to the working source dir
+STATIC PUBLIC sWorkingPath AS String = sTmpSourcePath &/ "build"
+STATIC PUBLIC sPackageDest AS String = file.dir(sFullSourcePath) ' Package's final destination
+STATIC PUBLIC sCurrentStep AS String ' extract, configure, make, install, package
+ ' PACKAGE INFORMATION
+' We will use the sAPP and sVer for the name and version part of the package name
+STATIC PUBLIC sPkgArch AS String = "i586"
+STATIC PUBLIC sPkgBuild AS String = "1"
+STATIC PUBLIC spkgTag AS String = "vl59"
+STATIC PUBLIC sPkgType AS String = "tlz"
+STATIC PUBLIC sFullPackageName AS String ' package name only...
+' BUILD VARIABLES
+STATIC PUBLIC sBuildConfigString AS String = "--prefix=/usr --sysconfdir=/etc --mandir=/usr/man --libdir=/usr/lib --bindir=/usr/bin --localstatedir=/var --with-included-gettext" ' from the textbox in the form
+STATIC PUBLIC sBuildCFLAGS AS String = "-O2 -march=i586 -mtune=i686" ' May need to change this to a variable
+STATIC PUBLIC sTmp_PKG_LOCATION AS String = sWorkingPath &/ "build" &/ "PKG" 'Location of the package in the temp dir
+
+' DESCRIPTION FILE VARIABLES
+STATIC PUBLIC sDesc_File_Path AS String ' For existing slack-desc
+STATIC PUBLIC sDesc_File_Array AS String[]
+STATIC PUBLIC sDesc_File_Contents AS String
+STATIC PUBLIC sDesc_File_Target AS String = sWorkingPath &/ "PKG" &/ "install" ' target dir for slack-desc in pacakge
+STATIC PUBLIC bDesc_file_provided AS Boolean ' whether to use a desc file or not
+
+' PROCESS STATUS
+STATIC PUBLIC iProcStatusFlag AS Integer
+
+' FOR FUTURE SETTINGS HANDLER
+STATIC PUBLIC sPackagerName AS String '= "vpackager" ' We'll use this to append the slack-desc file. Will default to vpackager
+
+' CMAKE BUILD PROCEDURE VARIABLES
+' MUST ASS A "-" IN FRONT OF EVERYONE TO CALL IT
+STATIC PUBLIC DCMAKE_INSTALL_PREFIX AS String ' = --prefix=<dir>
+STATIC PUBLIC DSYSCONF_INSTALL_DIR AS String  ' = --sysconfdir=<DIR>
+STATIC PUBLIC DMAN_INSTALL_DIR AS String      ' = --mandir=<dir>
+STATIC PUBLIC DINCLUDE_INSTALL_DIR AS String  ' = --includedir=<dir>
+STATIC PUBLIC DLIB_INSTALL_DIR AS String      ' = --libdir=<dir>
+STATIC PUBLIC DBIN_INSTALL_DIR AS String      ' = --bindir=<dir>
+STATIC PUBLIC DSBIN_INSTALL_DIR AS String     ' = --sbindir=<dir> Most likely not used
+STATIC PUBLIC CMAKE_CONFIGURE_STRING AS String ' The complete cmake configure script to be parsed
+
+
+'FOR BUILD SCRIPT WRITING
+STATIC PUBLIC bWriteScript AS Boolean
+STATIC PUBLIC sSOURCE_TYPE AS String
+STATIC PUBLIC bCopySlackDesc AS Boolean
+

@@ -1,0 +1,121 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+' This module does everything that has to do with the slack-desc file
+PUBLIC SUB Locate_File()
+  
+  Dialog.path = GLobal.sDefSrcDir ' Maybe start looking in the same dir as the source??? maybe
+  dialog.title = "Select formatted description file"
+  dialog.filter = ["slack-desc", "Formatted Description File"] 
+  IF dialog.OpenFile() THEN RETURN 
+  Global.sDesc_File_Path = dialog.Path
+  ME.analize_description_file()
+    
+END
+
+PUBLIC SUB analize_description_file()
+  DIM iLineCount AS Integer
+  DIM sFirstLine AS String
+  
+  IF Global.sDesc_File_Path THEN 
+  global.sDesc_File_Contents = file.Load(global.sDesc_File_Path)
+  Global.sDesc_File_Array = Split(Global.sDesc_File_Contents, "\n") ' Split the file into lines
+  iLineCount = Global.sDesc_File_Array.Count - 1 ' need to get the real count
+  
+  'message.Info(global.sDesc_File_Contents)
+  'message.Info("This file is " & iLineCount & " lines long")
+  
+   sFirstLine = Global.sDesc_File_Array[0] ' Open up the first line to test for compatibility
+   'message.Info("First line on the file reads: " & sFirstLine)  ' Just a sanity check
+   IF iLineCount > 12 THEN 
+    message.Error("This file is too long. Pkgtools limits the size of the description file to 11 lines, 70 characters each")
+    ELSE 
+    'message.Info("Description file seems fine to me ;)")
+    Global.bDesc_file_provided = TRUE ' Description file is good to go
+'    FCreatePkg.tlDescFilePath.Text = Global.sDesc_File_Path
+  FrmSrcToPkg.txtSlackDescPath = ClsBuildVars.sSlackDesc
+    
+  END IF
+  
+ELSE 
+' No descrption has been selected or created
+' code here to handle consequences ..... 
+MdlMain.WRITE_TO_BUILD_LOG(" WARNING: No description file was supplied... Package does not meet requirements for sharing")
+WAIT 2
+END IF
+  
+END
+
+PUBLIC SUB insert_slack_desc_file()
+  DIM source AS String ' File Source path
+  DIM target AS String ' File Destination path
+ 
+  target = Global.sWorkingPath &/ "PKG" &/ "install"
+  source = Global.sDesc_File_Path
+  
+ 
+  IF Global.bDesc_file_provided = TRUE THEN 
+    'IF IsDir(target) = FALSE THEN 
+    IF Exist(target) = FALSE THEN 
+      MKDIR target
+    END IF
+    IF Exist(target &/ "slack-desc") THEN 
+      'message.Warning("There is already a slack-desc file in this package... I'll be replacing it with the one you provided")
+     ' FBuild.taBuildProg.Insert(gb.newline &
+     MdlMain.WRITE_TO_BUILD_LOG(" WARNING: There seems to be a description file in place for this package... I'm replacing it.")
+      'message.Info("Copying " & source & " to " & target)
+      KILL target &/ "slack-desc"
+      
+      END IF
+    
+  MdlMain.WRITE_TO_BUILD_LOG(" Inserting slack-desc into package ")
+    
+    WAIT 2 
+    END IF
+    TRY COPY source TO target &/ "slack-desc"
+    ME.append_description_file() ' Must append it.
+END
+PUBLIC SUB append_description_file()
+  
+  ' This function will add the build information to the slack-desc. This should be done before moving it to the right dir
+  ' Assumes there is a description file of course, but lets run a sanity check just in case
+  DIM SourceFile AS String = Global.sDesc_File_Path
+  DIM sAdditions AS String
+  DIM sAppendCommand AS String
+  'WRITE Eof(SourceFile)
+  sAppendCommand = "cat << EOF >> " & SourceFile & gb.NewLine & gb.NewLine & gb.NewLine &
+  "#----------------------------------------------------------------" & gb.NewLine &
+  "BUILD DATE: `date` " & gb.NewLine &
+  "PACKAGER  : " & Global.sPackagerName & gb.newline &
+  "HOST      : `uname -srm`" & gb.newline &
+  "DISTRO    : `cat /etc/vector-version`" & gb.NewLine &
+  "CFLAGS    : " & Global.sBuildCFLAGS & gb.NewLine &
+  "CONFIGURE : " & Global.sBuildConfigString & gb.NewLine &
+  "EOF"
+  
+  IF Global.bDesc_file_provided = TRUE THEN 
+  'FBuild.taBuildProg.Insert(gb.NewLine & " vpackager - Appending slack-desc file")
+  MdlMain.WRITE_TO_BUILD_LOG(" Appending slack-desc file...")
+  WAIT 2
+  SHELL sAppendCommand WAIT 'TO FBuild.taBuildProg.Text ' Display it to the text area
+    ELSE 
+  'no description file provided
+  END IF
+  
+END

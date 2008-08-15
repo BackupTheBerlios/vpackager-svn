@@ -1,0 +1,78 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC SUB CMAKE_SOURCE_CONF(sBuildDir AS String)
+  
+DIM sDocmd AS String
+DIM sPrefix AS String = ClsBuildConf.sPrefix
+DIM sSysConfDir AS String = ClsBuildConf.sSysConfDir
+DIM sBinDir AS String = ClsBuildConf.sBinDir
+DIM sMandir AS String = ClsBuildConf.sManDir  
+DIM sCMAKE_CONF AS String
+DIM sQmakePath AS String
+DIM bClear AS Boolean
+
+
+sQmakePath = CSettings.sQmakePath
+
+IF sQmakePath = "" OR NOT sQmakePath THEN 
+  'MdlFindQmake.FIND_QMAKE()
+    Message.Error("Path to qmake executable has not been set. Please specify a valid path to qmake in the vpackager preferences and try again")
+    RETURN 
+END IF
+
+sCMAKE_CONF = "-DCMAKE_INSTALL_PREFIX=" & sPrefix &
+  " -DSYSCONF_INSTALL_DIR=" & ClsBuildConf.sSysConfDir &
+ " -DBIN_INSTALL_DIR=" & ClsBuildConf.sBinDir & 
+ " -DMAN_INSTALL_DIR=" & ClsBuildConf.sManDir &
+ " -DQT_QMAKE_EXECUTABLE=" & sQMakePath
+  sDocmd = "cd " & sBuildDir & " ; cmake " & sCMAKE_CONF & " .."
+  
+  
+  'set variables for script writer
+  
+  clsGenScript.CONFIG_COMMAND = "cmake"
+  clsGenScript.CONFIG_USED = sCMAKE_CONF
+  
+  
+  
+  IF IsDir(sBuildDir) = FALSE THEN 
+  MKDIR sBuildDir
+  END IF
+  
+  MdlSrcBuild.RUN_SHELL(sDocmd)
+    WAIT 
+      IF MdlSrcBuild.hproc.State = Process.Running THEN 
+        REPEAT 
+          WAIT 
+        UNTIL 
+        MdlSrcBuild.hproc.State = Process.Stopped
+      END IF
+      FrmBuildView.PbBuildProg.Value = 0.25
+  bClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+    IF bClear = TRUE ' error is found
+      MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE)
+      RETURN 
+    ELSE 
+    ' run make
+      MdlMain.WRITE_TO_BUILD_LOG(" + Run make")
+      MdlMake.RUN_MAKE(sBuildDir)
+    END IF    
+  
+END

@@ -1,0 +1,100 @@
+' Gambas module file
+
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PUBLIC SUB BUILD_PYTHON_SRC(sBuildDir AS String)
+  
+  DIM sDocmd AS String
+  DIM sPKGDir AS String
+  DIM sPrefix AS String
+  DIM sOptions AS String[]
+  DIM i AS Integer
+  DIM sOption AS String
+  DIM bClear AS Boolean
+  
+  IF IsDir(sBuildDir) = FALSE THEN 
+    MKDIR sBuildDir
+  END IF
+  sPKGDir = sBuildDir &/ "PKG"
+  IF IsDir(sPKGDir) = FALSE THEN 
+    MKDIR sPKGDir
+  END IF
+  
+  sOptions = Split(ClsBuildVars.sConfig, " ")
+    FOR i = 0 TO sOptions.count - 1
+      sOption = sOptions[i]
+        IF InStr(sOption, "--prefix=") THEN 
+          sPrefix = Right(sOption, Len(sOption) - Len("--prefix="))
+            MdlMain.WRITE_TO_BUILD_LOG("Python source detected... Installing application to " & sPrefix)
+        END IF
+      NEXT 
+    
+    IF IsDir(sPKGDir &/ sPrefix) = FALSE THEN 
+      MKDIR sPKGDir &/ sPrefix
+    END IF
+    
+    ' Set variables for script writer
+    clsGenScript.CONFIG_COMMAND = "python"
+    clsGenScript.CONFIG_USED = "--prefix=$PKG" & sPrefix
+    clsGenScript.sPrefix_Used = sPrefix
+    
+    sDocmd = "cd " & File.Dir(sBuildDir) &/ ClsBuildVars.sName & "-" & ClsBuildVars.sVersion & " ; python setup.py install --prefix=" & sPKGDir &/ sPrefix
+  
+    MdlSrcBuild.RUN_SHELL(sDocmd)
+      WAIT 
+        IF MdlSrcBuild.hproc.State = Process.Running THEN 
+          REPEAT 
+            WAIT 
+          UNTIL 
+            MdlSrcBuild.hproc.State = Process.Stopped
+        END IF
+        FrmBuildView.PbBuildProg.Value = 0.534
+      bClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+    IF bClear = TRUE ' error is found then
+    MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE)
+    MdlMain.WRITE_TO_BUILD_LOG(" + Error in build log... Cannot continue")
+    RETURN 
+    ELSE 
+    ' Time to package it up
+    ' Maybe add / append description before packaging it
+    
+    MdlMain.WRITE_TO_BUILD_LOG(" + Create installable package")
+    MdlPackage.PACKAGE(sPKGDir)
+    END IF
+    
+END
+
+PUBLIC SUB process_read()
+  
+  DIM sLine AS String
+  READ #LAST, sLine, -256
+  FrmBuildView.taTerm.Pos = Len(FrmBuildView.taTerm.Text)
+  FrmBuildView.taTerm.Insert(sline)
+    
+END
+
+PUBLIC SUB process_error(errormessage AS String)
+  
+  WITH FrmBuildView.taTerm
+    .Pos = Len(.text)
+    .Insert(errormessage)
+  END WITH 
+  
+END
+
+

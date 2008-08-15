@@ -1,0 +1,7 @@
+' Gambas class file
+STATIC PUBLIC sTMP_DIR AS String = "/tmp/vpackager-builds" ' globally assigned temp work dir
+STATIC PUBLIC sAction AS String
+STATIC PUBLIC sSelProcedure AS String
+
+STATIC PUBLIC bRememberAttr AS Boolean
+STATIC PUBLIC sInstalledPkgsList AS String ' Really long list of installed packages.

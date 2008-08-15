@@ -1,0 +1,565 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+PRIVATE bIsPort AS Boolean
+PRIVATE sWrkgRep AS String ' working repo
+PRIVATE sWrkPrt AS String ' working port
+PUBLIC sPortsUnresolved AS String
+
+PUBLIC SUB btLocalPorts_Click()
+
+  MdlCruxFunctions.LOAD_ALL_REPOS()
+    ' enable the search feature
+    WITH ME
+      .btSearch.Enabled = TRUE
+      .btSearch.ForeColor = Color.Black
+      .txtSearch.Text = ""
+      .txtSearch.Enabled = TRUE
+    END WITH 
+  ' In this same function, let's generate a list of installed stuff
+  ClsGlobal.sInstalledPkgsList = ""
+  SHELL "ls -aH /var/log/packages" TO ClsGlobal.sInstalledPkgsList
+
+END
+
+PUBLIC SUB tvPorts_Select()
+DIM sBaseDir AS String = "/usr/ports"
+DIM sRootDir AS String
+DIM sPort AS String
+DIM ipos1 AS Integer
+DIM sBuildFile AS String
+DIM sRepo AS String
+DIM sRepStatus AS String
+
+FrmPorts.btSaveLog.Visible = FALSE
+ipos1 = InStr(ME.tvPorts.Current.Key, ".")
+'sRootDir = Trim(sBaseDir &/ Left(ME.tvPorts.Current.Key, ipos1 - 1))
+sRootDir = Trim(sBaseDir &/ Left(ME.tvPorts.Current.Key, ipos1))
+sPort = Right(ME.tvPorts.Current.Key, Len(ME.tvPorts.Current.Key) - ipos1)
+    IF InStr(sRootDir, ".") THEN 
+      sRootDir = Left(sRootDir, InStr(sRootDir, ".") - 1)
+    END IF
+
+sBuildFile = sRootDir &/ sPort &/ "Pkgfile"
+
+
+IF Exist(sBuildFile) = TRUE THEN 
+  bIsPort = TRUE
+  sRepo = Right(sRootDir, Len(sRootDir) - RInStr(sRootDir, "/"))
+    ME.taShell.Text = DConv(File.Load(sBuildFile))
+    ME.EditPkgfile.Enabled = TRUE
+    ME.prtEditPkgfile.Enabled = TRUE
+    MdlCruxFunctions.ANALIZE_PORT(sRootDir, tvPorts.Current.Text)
+  WITH FrmPorts
+
+    .btBuildPort.Enabled = TRUE
+    .btBuildPort.ForeColor = Color.black
+  END WITH
+  MdlCruxFunctions.RESOLVE_ROOT_DIR(sRepo)
+sRepStatus = MdlCruxFunctions.CHECK_REPO_STATUS(sRepo) 
+  
+' check to see if the package exists, and then enable the options
+  IF MdlCruxFunctions.PROBE_PACKAGE_EXISTANCE(ClsCrux.sWrkgRootDir, ClsCrux.sName) = TRUE THEN 
+      'IF InStr(ClsGlobal.sInstalledPkgsList, ClsCrux.sName & "-" & ClsCrux.sVersion & "-*") THEN 
+      'IF MdlCruxFunctions.PROBE_PACKAGE_EXISTANCE(ClsCrux.sWrkgRootDir, ClsCrux.sName) = TRUE THEN 
+        ME.prtRemove.Enabled = TRUE
+        ME.prtClenup.Enabled = TRUE
+      
+  ELSE 
+    ME.prtRemove.Enabled = FALSE
+    ME.prtClenup.Enabled = FALSE
+  END IF
+ELSE 
+  sRepo = FrmPorts.tvPorts.Current.Text
+  sRepStatus = MdlCruxFunctions.CHECK_REPO_STATUS(sRepo)  
+  bIsPort = FALSE
+  WITH FrmPorts
+  
+  .btBuildPort.Enabled = FALSE
+  .btBuildPort.ForeColor = Color.Gray
+  END WITH
+  ME.taShell.Text = "REPOSITORY OVERVIEW" & GB.NewLine & 
+  GB.NewLine &
+  "Name: " & ME.tvPorts.Current.Text & GB.NewLine & 
+  "Ports: " & ME.tvPorts.Current.Children & gb.NewLine &
+  "Status: " & sRepStatus
+  ME.prtEditPkgfile.Enabled = FALSE
+  ME.EditPkgfile.Enabled = FALSE
+END IF
+    ' / Check the status for the repo, and warn the user accordingly
+
+    SELECT CASE sRepStatus
+      CASE "Enabled"
+        'FrmPorts.tlWarning.Text = sRepo & " is " & sRepStatus
+        FrmPorts.tlWarning.Visible = TRUE
+        FrmPorts.pbLamp.Visible = FALSE
+      
+      CASE "Disabled"
+        FrmPorts.tlWarning.Text = "<b>" & "WARNING: " & "</b>" & "This repository is currently disabled." & gb.NewLine &
+        "It is possible that ports within this repository are outdated."
+        FrmPorts.tlWarning.Visible = TRUE
+        FrmPorts.pbLamp.Visible = TRUE
+    END SELECT   
+        
+
+sWrkgRep = sRepo
+sWrkPrt = sPort
+
+MdlCruxFunctions.RESOLVE_ROOT_DIR(sWrkgRep) ' Sets the current root dir to the global variable.
+
+
+END
+
+PUBLIC SUB RECALL_MY_PROPERTIES()
+  
+    IF ClsGlobal.bRememberAttr = TRUE THEN 
+    ME.X = MSettings.READ_SETTINGS("WINDOWS/CRUX/LEFT", 10)
+    ME.Y = MSettings.READ_SETTINGS("WINDOWS/CRUX/TOP", 10)
+    ME.Width = MSettings.READ_SETTINGS("WINDOWS/CRUX/WIDTH", 800)
+    ME.Height = MSettings.READ_SETTINGS("WINDOWS/CRUX/HEIGHT", 600)
+        'ME.HAreaSplit.Layout = MSettings.READ_SETTINGS("WINDOWS/CRUX/DESIGN", "200,600")
+        ME.HSWorkArea.Layout = MSettings.READ_SETTINGS("WINDOWS/CRUX/DESIGN", "250,550")
+
+  ELSE 
+    ME.Center
+END IF
+
+  
+END
+
+
+PUBLIC SUB Form_Open()
+  'retreive and apply window attributes
+  ME.RECALL_MY_PROPERTIES()
+  ' Populate the list of installed packages
+  SHELL "ls -aH /var/log/packages" TO ClsGlobal.sInstalledPkgsList
+  
+  ME.Center()
+  ME.HSWorkArea.Layout = "200,600"
+  ' disable the search until some ports are shown
+  WITH ME
+    .txtSearch.Enabled = FALSE
+    .btSearch.Enabled = FALSE
+    .btSearch.ForeColor = Color.Gray
+    .txtSearch.Text = "Click the \"Display Available\" button to begin"
+  END WITH 
+  
+END
+
+PUBLIC SUB btSearch_Click()
+
+IF txtSearch.Text <> "" THEN 
+  MdlCruxFunctions.RUN_SEARCH(ME.txtSearch.text)
+ELSE 
+  FrmPorts.tvPorts.Clear
+  MdlCruxFunctions.LOAD_ALL_REPOS()
+END IF
+  
+
+END
+
+PUBLIC SUB Form_Resize()
+
+  
+
+  WITH ME
+    .txtSearch.Width = ME.ClientWidth - ME.tlSearch.Width - ME.btSearch.Width - 8
+    .btSearch.Move(ME.ClientWidth - ME.btSearch.Width - 2, .txtSearch.Top)
+    .HSWorkArea.Width = ME.ClientWidth - 14
+    .HSWorkArea.Height = ME.ClientHeight - ME.btBuildPort.Height - ME.tlSearch.Height - 70
+    .btExit.Move(ME.btSearch.Left, ME.btSearch.top + ME.btSearch.Height + ME.HSWorkArea.Height + 14)
+    .btAbort.Move(ME.btExit.left - ME.btAbort.Width - 4, ME.btExit.Top)
+    .btSaveLog.Move(ME.btAbort.Left - ME.btSaveLog.Width - 4, ME.btAbort.top)
+    .tlStatus.Width = ME.ClientWidth - ME.btExit.Width - ME.btAbort.Width - ME.btSaveLog.Width - 6
+    .tlStatus.Move(ME.HSWorkArea.left, ME.btAbort.Top)
+    
+  END WITH
+  
+  WAIT 0.2
+
+' check for current dimmensions
+  IF ME.ClientHeight <> 600 THEN 
+    ME.Height = 600
+  END IF
+  IF ME.ClientWidth < 800 THEN 
+    ME.Width = 800
+  END IF
+ME.Refresh()
+  
+
+END
+
+PUBLIC SUB txtSearch_KeyRelease()
+
+  SELECT CASE Key.Code
+    CASE Key.Return
+      IF txtSearch.Text = "" THEN 
+        FrmPorts.tvPorts.Clear
+        MdlCruxFunctions.LOAD_ALL_REPOS()
+      ELSE 
+        MdlCruxFunctions.RUN_SEARCH(txtSearch.Text)
+      END IF
+    CASE key.Enter
+        IF txtSearch.Text = "" THEN 
+          FrmPorts.tvPorts.Clear()
+          MdlCruxFunctions.LOAD_ALL_REPOS()
+        ELSE 
+          MdlCruxFunctions.RUN_SEARCH(txtSearch.Text)
+        END IF
+    CASE Key.BackSpace
+        IF txtSearch.Text = "" THEN 
+          tvPorts.Clear
+            MdlCruxFunctions.LOAD_ALL_REPOS()
+        END IF
+        
+  END SELECT 
+  
+
+END
+
+PUBLIC SUB tvPorts_Menu()
+
+IF bIsPort = FALSE THEN 
+  FrmPorts.RepMenu.Popup()
+ELSE IF bIsPort = TRUE THEN 
+  FrmPorts.PrtMenu.Popup()
+END IF  
+
+END
+
+PUBLIC SUB btRefresh_Click()
+
+  FrmPorts.taShell.Clear
+  MdlCruxFunctions.LAUNCH("ports -u", FALSE, FALSE, "")
+  WAIT 1
+    
+    IF MdlCruxFunctions.hProc.State = process.Running THEN 
+      REPEAT 
+        WAIT 1
+        'FrmPorts.tlStatus.Text = "Updating repositories... Please wait"
+      UNTIL 
+        MdlCruxFunctions.hProc.State = Process.Stopped
+        FrmPorts.tlStatus.Text = ""
+    END IF
+    ME.tvPorts.Clear
+    
+    
+    IF InStr(ME.taShell.Text, "FAILED") = FALSE THEN 
+    MdlCruxFunctions.FLASH_STATUS_TEXT("Ports updated", 3, 1, ME.tlStatus)
+    ELSE 
+    ME.tlStatus.ForeColor = Color.Red
+    MdlCruxFunctions.FLASH_STATUS_TEXT("Error while updating", 3, 1, ME.tlStatus)
+    ME.tlStatus.ForeColor = Color.Black
+    END IF
+    ME.txtSearch.Clear
+    MdlCruxFunctions.LOAD_ALL_REPOS()
+
+END
+
+PUBLIC SUB tmProcMon_Timer()
+DIM sPkgname AS String
+  sPkgname = ClsCrux.sName & "-" & ClsCrux.sVersion & "-" & "i586" & "-" & ClsCrux.sRelease & ClsCrux.sTag & ".tlz"
+
+  IF MdlCruxFunctions.hProc.State = Process.Running THEN
+   ME.btAbort.Visible = TRUE
+      ME.btAbort.Enabled = TRUE
+      ME.btAbort.Text = "Abort"
+      ME.btAbort.ForeColor = Color.Black 
+      ME.btSaveLog.Visible = FALSE
+    IF MdlCruxFunctions.bBuildasDep = FALSE THEN 
+    MdlCruxFunctions.CHANGE_ALL_CONTROLS("Disable")
+        'IF ClsCrux.sName THEN 
+        IF MdlCruxFunctions.bBuildingPort = TRUE THEN 
+      WITH ME
+        .tlWarning.Text = ClsCrux.sName & "-" & ClsCrux.sVersion & gb.NewLine & gb.NewLine &
+        "Building . . .  Please wait"
+        .tlStatus.Text = ""
+      END WITH 
+        END IF
+    ELSE ' dep is building
+       WITH ME
+        '.tlWarning.Text = "Resolving dependancies for " & ClsCrux.sName & " Please wait . . ."
+        .tlStatus.Text = "Resolving dependancies for " & ClsCrux.sName & " . . . Please wait."
+       END WITH 
+    END IF
+    
+    
+  ELSE 
+        ' this will trigger if the process is fulfilling a dep from slapt-get
+          IF MdlCruxFunctions.bBuildasDep = TRUE AND InStr(MdlCruxFunctions.sBuildLog, "No such package") > 0 THEN 
+            ' send the results to a variable somewhere
+            MdlSlaptDeps.sToPortAsDep = MdlSlaptDeps.sToPortAsDep & " " & MdlCruxFunctions.sDepBuilding
+          END IF
+              ME.tlStatus.Text = ""
+    WITH ME.btAbort
+    .Enabled = FALSE
+    .ForeColor = Color.Gray
+    .Visible = FALSE
+    END WITH 
+    ME.tvPorts.Enabled = TRUE
+    MdlCruxFunctions.CHANGE_ALL_CONTROLS("Enable")
+    FrmPorts.tlWarning.Text = ""
+    FrmPorts.btSaveLog.Visible = TRUE
+    FrmPorts.tlStatus.text = ""
+    ME.tmProcMon.Enabled = FALSE
+      IF MdlCruxFunctions.bBuildingPort = TRUE THEN 
+          IF ClsCrux.binstall = TRUE THEN 
+              IF InStr(FrmPorts.taShell.Text, "FAILED") > 0 THEN 
+              Message.Error("An error occurred while building " & ClsCrux.sName & ". " & Global.sMyname & " is unable to continue")
+              RETURN 
+              ELSE 
+          ' install package here only if not being built as a dependancy, in which case, it will get installed via pkgmk
+              IF MdlCruxFunctions.bBuildasDep = FALSE THEN 
+                MdlInstall.INSTALL_CREATED_PACKAGE(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ sPkgname, "install", FrmPorts)
+              END IF
+            END IF
+          
+            
+          END IF
+      ELSE 
+          
+      END IF
+  END IF
+  
+        
+END
+
+PUBLIC SUB btAbort_Click()
+
+MdlCruxFunctions.bAborted = TRUE
+  IF MdlCruxFunctions.hProc.State = Process.Running THEN 
+    MdlCruxFunctions.hProc.Kill
+  ME.tlStatus.Text = "<b>" & "Operation cancelled per user request ... " & "</b>"
+  WAIT 3
+  ME.tlStatus.Text = ""
+  ELSE 
+  ME.tlStatus.Text = "<b>" & "Build process is not running ..." & "</b>"
+  WAIT 
+  ME.tlStatus.Text = ""
+  END IF
+  FrmPorts.taShell.Insert(gb.NewLine & gb.NewLine & " + Operation cancelled per user request")
+  FrmPorts.tvPorts.Clear
+  FrmPorts.tlStatus.Text = "Operation cancelled"
+  MdlCruxFunctions.LOAD_ALL_REPOS()
+  FrmPorts.txtSearch.Clear
+  FrmPorts.tlStatus.Text = ""
+RETURN 
+END
+
+
+PUBLIC SUB RepUpdtOne_Click()
+
+  ME.taShell.Clear()
+  MdlCruxFunctions.UPDATE_ONE_REPO(FrmPorts.tvPorts.Current.Text)
+    ' WAIT 1
+    '   
+    '   IF MdlCruxFunctions.hProc.state = Process.running THEN 
+    '   REPEAT 
+    '   WAIT 
+    '   UNTIL 
+    '   MdlCruxFunctions.hProc.state = Process.Stopped
+      
+
+END
+
+PUBLIC SUB btExit_Click()
+
+  ME.Close
+  FMain.Show()
+
+END
+
+PUBLIC SUB PrtInstall_Click()
+
+  'make sure the values on the next window are cleared
+    IF FCruxBuildDetails.Visible = TRUE THEN 
+      FCruxBuildDetails.Close
+    END IF
+
+  ' Get package Port Information and throw it at the next window
+  FCruxBuildDetails.lbPackageInfo.Text = "<h3>" & "Ready to build " & ClsCrux.sName & "</h3>" & gb.NewLine &
+  "Please select your build options" 
+  FCruxBuildDetails.lbPackageInfo.Alignment = Align.Center
+  FCruxBuildDetails.SET_PACKAGE_NAME()
+    
+    ME.Hide
+    MdlCruxFunctions.CHANGE_ALL_CONTROLS("Disable")
+    FCruxBuildDetails.Show
+  MdlCruxFunctions.bAborted = FALSE
+
+END
+
+
+PUBLIC SUB RepMenuUpdtAll_Click()
+
+  MdlCruxFunctions.LAUNCH("ports -u", FALSE, FALSE, "")
+
+END
+
+PUBLIC SUB RepMenuMng_Click()
+
+  ME.Hide
+    FRepChange.Show()
+    FRepChange.Center()
+
+END
+
+PUBLIC SUB btBuildPort_Click()
+
+  ME.PrtInstall_Click()
+  
+
+END
+
+PUBLIC SUB prtViewDesc_Click()
+
+  DIM sFile AS String
+  DIM sContents AS String[]
+  DIM sPkgfile AS String
+  DIM sScript AS String[]
+  DIM i AS Integer
+  DIM sLine AS String
+  
+  sFile = ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ "slack-desc"
+    IF Exist(sFile) THEN 
+      FrmPorts.taShell.Clear
+        sContents = Split(DConv(File.Load(sFile)), "\n")
+          FOR i = 0 TO sContents.Count - 1
+            sLine = sContents[i]
+            FrmPorts.taShell.Insert(Trim(Right(sLine, Len(sLine) - InStr(sLine, ":"))) & gb.NewLine)
+          NEXT 
+    ELSE 
+      sPkgfile = DConv(File.Load(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ "Pkgfile"))
+          sScript = Split(sPkgfile, "\n")
+            FOR i = 0 TO sScript.Count - 1
+              sLine = sScript[i]
+                IF Left(sLine, 1) = "#" AND InStr(sLine, "Description", gb.case, 1) THEN 
+                  FrmPorts.taShell.Clear
+                    FrmPorts.taShell.Insert("Brief Description:" & gb.NewLine & gb.NewLine &
+                      ClsCrux.sName & "-" & ClsCrux.sVersion & gb.NewLine & gb.NewLine &
+                      Trim(Right(sLine, Len(sLine) - InStr(sLine, ":"))))
+                END IF
+            NEXT 
+          CATCH 
+            FrmPorts.tvPorts.Enabled = FALSE
+            FrmPorts.tlStatus.Text = "Unable to display Description"
+            WAIT 0.5
+            FrmPorts.tlStatus.Text = ""
+            WAIT 0.5
+            FrmPorts.tlStatus.Border = Border.Sunken
+            FrmPorts.tlStatus.Text = "Unable to display Description"
+            WAIT 0.5
+            FrmPorts.tlStatus.Text = ""
+            WAIT 0.5
+            FrmPorts.tlStatus.Text = "Unable to display Description :("
+            FrmPorts.tlStatus.Border = Border.None
+            FrmPorts.tvPorts.Enabled = TRUE
+            WAIT 2
+            FrmPorts.tlStatus.Text = ""
+            
+            RETURN 
+            
+    END IF
+    
+MdlCruxFunctions.bAborted = FALSE
+END
+
+PUBLIC SUB prtRemove_Click()
+
+  MdlInstall.INSTALL_CREATED_PACKAGE(ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ ClsCrux.sName & "-" & ClsCrux.sVersion & "-i586-" & ClsCrux.sRelease &
+  ClsCrux.sTag & ".tlz", "uninstall", FrmPorts) 
+  MdlCruxFunctions.bAborted = FALSE
+
+END
+
+PUBLIC SUB prtUpdtMdsum_Click()
+
+  DIM sToDo AS String
+  sToDo = "cd " & ClsCrux.sWrkgRootDir &/ ClsCrux.sName & "; export VL_PACKAGER=" & Global.sMyname & "; pkgmk -um"
+  MdlCruxFunctions.LAUNCH(sToDo, FALSE)
+  MdlCruxFunctions.bAborted = FALSE
+
+END
+
+PUBLIC SUB FileQuit_Click()
+
+  ME.btExit_Click()
+
+END
+
+PUBLIC SUB prtEditPkgfile_Click()
+
+  DIM sPkgFilePath AS String
+  sPkgFilePath = ClsCrux.sWrkgRootDir &/ ClsCrux.sName &/ "Pkgfile"
+  FrmPorts.Minimized = TRUE
+  FTextEditor.TMP_EDITOR_GO(sPkgFilePath, FrmPorts)
+  MdlCruxFunctions.bAborted = FALSE
+
+END
+
+PUBLIC SUB prtDepCheck_Click()
+  
+  IF Len(Trim(ClsCrux.sDeps)) < 1 THEN 
+    Message.Error("Dependancies for " & ClsCrux.sName & " are not listed in the build script. Dependancy resolving is not available")
+      RETURN 
+    ELSE 
+      MdlCruxFunctions.DEP_CHECKER(Trim(ClsCrux.sDeps), TRUE)
+  END IF
+
+END
+
+PUBLIC SUB prtClenup_Click()
+
+  DIM sCmd AS String
+  sCmd = "cd " & ClsCrux.sWrkgRootDir &/ ClsCrux.sName & "; export VL_PACKAGER=" & Global.sPackagerName & "; pkgmk -c"
+  MdlCruxFunctions.LAUNCH(sCmd, FALSE, FALSE, "")
+MdlCruxFunctions.bAborted = FALSE
+END
+
+PUBLIC SUB Form_Close()
+
+IF ClsGlobal.bRememberAttr = TRUE THEN 
+' save window attributes
+MSettings.WRITE_SETTINGS("WINDOWS/CRUX/LEFT", ME.Left)
+MSettings.WRITE_SETTINGS("WINDOWS/CRUX/TOP", ME.TOP)
+MSettings.WRITE_SETTINGS("WINDOWS/CRUX/WIDTH", ME.Width)
+MSettings.WRITE_SETTINGS("WINDOWS/CRUX/HEIGHT", ME.Height)
+MSettings.WRITE_SETTINGS("WINDOWS/CRUX/DESIGN", ME.HSWorkArea.Layout)
+END IF
+  FMain.Show()
+
+END
+
+PUBLIC SUB EditPkgfile_Click()
+
+  ME.prtEditPkgfile_click()
+
+END
+
+PUBLIC SUB EditRepos_Click()
+
+  ME.Hide
+  ME.RepMenuMng_Click()
+
+END
+
+PUBLIC SUB btSaveLog_Click()
+
+  IF Dialog.SaveFile() THEN RETURN 
+  File.Save(Dialog.Path, SConv(ME.taShell.text))
+
+END

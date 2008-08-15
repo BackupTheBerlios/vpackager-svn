@@ -1,0 +1,123 @@
+' Gambas class file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+PRIVATE installer AS Process
+
+PUBLIC SUB Form_Open()
+
+ME.Caption = Global.sMyname & " Package installer"
+  ME.verify_preceed()
+  
+  
+END
+
+PUBLIC SUB verify_preceed()
+  
+  IF GLobal.sFullPackageName THEN 
+  'Code to preceed here
+  ME.install_package()
+  'message.Info("Now installing package")
+    ELSE 
+  message.Error("I dont see anything to install here... Something is seriously screwed!")
+  'ME.Close
+  'FMain.Close ' exit
+  END IF
+    
+END
+PUBLIC SUB install_package()
+  
+    DIM installstring AS String
+    DIM packagepath AS String
+    
+  packagepath = file.Dir(Global.sFullSourcePath) &/ Global.sFullPackageName
+  installstring = "/sbin/upgradepkg --install-new " & packagepath
+  
+  installer = SHELL installstring & " || echo \'INSTALLATION FAILED\' " FOR READ 
+  TmMonitorInstall.Enabled = TRUE
+  
+END
+
+PUBLIC SUB process_read()
+  
+  DIM sBuffer AS String
+  
+  READ #LAST, sBuffer, -256
+  taInstallProg.pos = Len(taInstallProg.text)
+  taInstallProg.Insert(sBuffer)
+    
+END
+PUBLIC SUB process_error(ErrorMessage AS String)
+  
+  taInstallProg.pos = Len(taInstallProg.text)
+  taInstallProg.Insert(ErrorMessage)
+  
+END
+
+
+PUBLIC SUB tmMonitorInstall_Timer()
+
+
+  IF installer.State = process.stopped THEN 
+ TmMonitorInstall.enabled = FALSE
+  btClose.Enabled = TRUE
+  IF InStr(taInstallProg.text, "INSTALLATION FAILED") THEN 
+  
+    message.Error("An error occurred while trying to install this package. Please check the output")
+    ELSE 
+    taInstallProg.Insert(gb.NewLine & gb.NewLine &
+  "----------------------------------------" & gb.NewLine &
+  "Package installation complete")
+  tlLabel.text = "Package Installation complete..."
+  END IF
+  btClose.ForeColor = color.Black
+  PbFakeInstall.value = 1
+  ELSE 
+  PbFakeInstall.value = PbFakeInstall.value + 0.05
+  IF PbFakeInstall.value >= 0.95 THEN 
+  PbFakeInstall.value = 0.05
+  END IF
+  END IF
+    
+
+END
+
+PUBLIC SUB btClose_Click()
+
+ME.Close
+FMain.Show  
+
+END
+
+PUBLIC SUB Form_Resize()
+
+taInstallProg.Height = ME.Height - (tlLabel.Height + btClose.Height + 30)
+taInstallProg.Width = ME.Width - 12
+PbFakeInstall.Move(taInstallProg.x, ME.ClientHeight - btClose.Height - 4, ME.ClientWidth - (btClose.Width + 12), btClose.Height)
+PbFakeInstall.Width = ME.taInstallProg.Width - (ME.btClose.Width + 10)
+'PbFakeInstall.Move(
+'btClose.Move(ME.Width - (ME.Width - PbFakeInstall.Width - 10), PbFakeInstall.Top)
+ME.btClose.Move(ME.w - (ME.btClose.Width + 4), ME.pbFakeInstall.top)
+
+
+END
+
+PUBLIC SUB Form_Close()
+
+  FMain.Show()
+
+END

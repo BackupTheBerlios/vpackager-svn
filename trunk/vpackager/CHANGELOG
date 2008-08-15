@@ -1,0 +1,8 @@
+* Mon Jun 23 2008 M0E-lnx <M0E.lnx@gmail.com> 
+- Changed the structure of the src directory to make room for gnu tools build system.
+- This will allow vpackager to be built / installed in other systems
+
+* Thu Jun 19 2008 M0E-lnx <M0E.lnx@gmail.com> 
+- Updated 1.0.14 release that will use the autoconf tools to build into other systems
+- Hopefully this will allow vpackager to expand to other slack-derivate distros
+

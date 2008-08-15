@@ -1,0 +1,297 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+PUBLIC hBuildProc AS Process ' The build process
+PUBLIC iBuildState AS Integer ' Enumerated build state (0 - 5)
+PUBLIC sBuildType AS String
+PRIVATE sShellCmd AS String 
+PRIVATE hExtractor AS Process
+
+
+PUBLIC FUNCTION TOGGLE_CANCEL_BUTTON(bCancel AS Boolean)
+  
+  IF bCancel = TRUE THEN 
+  WITH FrmBuildView.btCancel
+  .text = "Cancel"
+  .ForeColor = color.Black
+  .Enabled = TRUE
+  END WITH 
+  WITH FrmBuildView.btNext
+  .ForeColor = color.Gray
+  .Enabled = FALSE
+  END WITH 
+  WITH FrmBuildView.btSaveLog
+  .ForeColor = color.Gray
+  .Enabled = FALSE
+  END WITH 
+  
+  ELSE 
+  WITH FrmBuildView.btCancel
+  .text = "Back"
+  .ForeColor = color.Black
+  .Enabled = TRUE
+  END WITH
+  WITH FrmBuildView
+  .btSaveLog.Enabled = TRUE
+  .btSaveLog.ForeColor = color.Black
+  .btNext.Enabled = TRUE
+  .btNext.ForeColor = color.Black
+  END WITH
+  END IF
+  
+  
+END
+
+PUBLIC FUNCTION QUICK_ERROR_CHECK(sRawText AS String, sMatch AS String) AS Integer
+  
+  IF InStr(sRawText, sMatch) > 0 THEN 
+  FrmBuildView.tmProgress.Enabled = FALSE
+  RETURN 1
+  ELSE 
+  RETURN 0
+  END IF
+  
+END
+
+
+
+PUBLIC SUB SPLIT_FILE_NAME()
+  
+    
+  DIM sAppNam AS String
+  DIM sAppVer AS String
+  DIM ipos1 AS Integer
+   
+  ' Split the file name to get name and version
+  ipos1 = RInStr(file.BaseName(ClsBuildVars.sSrcPath), "-")
+  sAppNam = Left(file.BaseName(ClsBuildVars.sSrcPath), ipos1 - 1)
+  sAppVer = Right$(file.BaseName(ClsBuildVars.sSrcPath), Len(file.BaseName(ClsBuildVars.sSrcPath)) - ipos1)
+  IF Right$(sAppVer, 4) = ".tar" THEN 
+  sAppVer = Left(sAppVer, Len(sAppVer) - 4)
+  END IF
+  
+  ' Store the name and version values to the class file after the splitting
+  ClsBuildVars.sName = sAppNam
+  ClsBuildVars.sVersion = sAppVer
+ME.SUMMARIZE_BUILD()
+
+  
+
+END
+
+PUBLIC SUB SUMMARIZE_BUILD()
+
+
+FrmSrcToPkg.tlSummary.text = "<b>" & "Application: " & "</b>" & ClsBuildVars.sName & "<br><br>" &
+"<b>" & "Version: " & "</b>" & ClsBuildVars.sVersion & "<br><br>" &
+"<b>" & "Release: " & "</b>" & ClsBuildVars.sRel
+' Second label
+FrmSrcToPkg.TlBuildSum2.Text = "<b>" & "Build Tag: " & "</b>" & ClsBuildVars.sTag & "<br><br>" & 
+"<b>" & "System Arch.: " & "</b>" & ClsBuildVars.sArch & "<br><br>" &
+"<b>" & "Package Format: " & "</b>" & ClsBuildVars.sType
+
+  
+  
+END
+
+
+
+PUBLIC FUNCTION INSERT_DESC(sIniPath AS String, sOutpath AS String)
+  DIM sFile AS String
+  DIM sAppendedDesc AS String
+  ' make sure the folder for the description file exists, and copy the file
+  IF ClsBuildVars.bhasDesc = TRUE THEN 
+  IF IsDir(sOutpath) = FALSE THEN 
+    MKDIR sOutpath
+  END IF
+  MdlMain.WRITE_TO_BUILD_LOG(" + Appending and inserting description file into package ...")
+  IF Exist(sOutpath &/ "slack-desc") THEN 
+    KILL sOutpath &/ "slack-desc"
+  END IF
+  COPY sIniPath TO sOutpath &/ "slack-desc"
+  ' after the copy, do the append
+  'sFile = file.Load(sOutpath &/ "slack-desc")
+  'append the slack-desc
+  SHELL "cat << EOF >> " & sOutpath &/ "slack-desc" & gb.NewLine &
+  "#--------------------------------------------------------------" & gb.NewLine &
+  gb.NewLine &
+  "BUILDDATE: `date`" & gb.NewLine &
+  "PACKAGER : " & global.sPackagerName & gb.NewLine &
+  "HOST     : `uname -srm`" & gb.NewLine &
+  "DISTRO   : `cat /etc/vector-version`" & gb.NewLine &
+  "CFLAGS   : " & ClsBuildVars.sCFLAGS & gb.NewLine &
+  "CONFIGURE: " & ClsBuildVars.sConfig & gb.NewLine &
+  "EOF"
+  
+  ELSE 
+        
+    MdlMain.WRITE_TO_BUILD_LOG(" WARNING: No description file provided for " & ClsBuildVars.sname & "-" & ClsBuildVars.sversion)
+  END IF
+    
+  
+  
+END
+
+PUBLIC FUNCTION SPLIT_CONFIG_OPTIONS(sConfigString AS String)
+  ' This function is only needed for Python and CMAKE building.
+  ' Needs to run as soon as a python or Cmake or any other source type (other than GNU Style) 
+  ' is detected.
+  DIM arrOptions AS String[]
+  DIM sPref AS String
+  DIM sSysConfDir AS String
+  DIM sLocalstateDir AS String
+  DIM sBinDir AS String 
+  DIM sManLoc AS String
+  DIM sCurrentOption AS String
+  DIM sOtherOptions AS String
+  DIM iSepPos AS Integer
+  DIM iCurrOptLen AS Integer
+  DIM i AS Integer
+  arrOptions = Split(sConfigString, " ") ' Separate the string into sections divided by s blank space
+    FOR i = 0 TO arrOptions.count - 1
+      sCurrentOption = arrOptions[i]
+      iCurrOptLen = Len(sCurrentOption)
+      iSepPos = InStr(sCurrentOption, "=")
+        IF InStr(sCurrentOption, "--prefix") THEN 
+          sPref = Right$(sCurrentOption, iCurrOptLen - iSepPos)
+        ELSE IF InStr(sCurrentOption, "--sysconfdir") THEN
+          sSysConfDir = Right$(sCurrentOption, iCurrOptLen - iSepPos)
+        ELSE IF InStr(sCurrentOption, "--bindir") THEN 
+          sBindir = Right$(sCurrentOption, iCurrOptLen - iSepPos)
+        ELSE IF InStr(sCurrentOption, "--localstatedir") THEN 
+          sLocalstateDir = Right$(sCurrentOption, iCurrOptLen - iSepPos)
+        ELSE IF InStr(sCurrentOption, "--mandir") THEN 
+          sManLoc = Right$(sCurrentOption, iCurrOptLen - iSepPos)
+        ELSE 
+          sOtherOptions = sOtherOptions & " " & sCurrentOption
+          
+        END IF
+      NEXT 
+  ' Save all values to a globally accessible class file
+  WITH ClsBuildConf
+  .sBinDir = sBinDir
+  .sPrefix = sPref
+  .sSysConfDir = sSysConfDir
+  .sLocalStateDir = sLocalstateDir
+  .sOtherOptions = sOtherOptions
+  .sManDir = sManLoc
+  END WITH       
+  
+END
+
+
+PUBLIC FUNCTION BUILD_CMAKE(sName AS String, sVer AS String, sPkgDescPath AS String, iBuildStep AS Integer)
+
+'/* Assumes a CMAKE source has been detected
+
+DIM sArch AS String = ClsbuildVars.sArch
+DIM sRel AS String = ClsBuildVars.sRel
+DIM sTag AS String = ClsBuildVars.sTag
+DIM sPkgType AS String = ClsBuildVars.sType
+DIM sFullPackageName AS String = sName & "-" & sVer & "-" & sArch & "-" & sRel & sTag & "." & sPkgtype
+DIM sTmpSpace AS String = ClsGlobal.sTMP_DIR
+'DIM sShellCmd AS String
+DIM sDESTDIR AS String = sTmpSpace &/ sName & "-" & sVer &/ "build" &/ "PKG"
+DIM sUntarredSrcDir AS String = sTmpSpace &/ sName & "-" & sVer
+DIM sLackDescDest AS String = sDESTDIR &/ "install"  
+DIM sCMAKECONF AS String
+DIM sQMakePath AS String
+
+
+'/* CMAKE wants qmake
+'SHELL "which qmake" TO sQMakePath
+sQMakePath = "/usr/lib/qt-4.3.2/bin/qmake"
+'message.Info(sQMakePath)
+
+
+' /* Morph a raw configure options array into CMAKE-Acceptable options. The syntax is below
+
+ '  syntax = cmake - DCMAKE_INSTALL_PREFIX = Dir - > - - prefix = Dir
+ '                          - DSYSCONF_INSTALL_DIR = Dir - > - - sysconfdir = Dir
+ '                          - DMAN_INSTALL_DIR = Dir - > - - mandir = Dir
+ '                          - DICON_INSTALL_DIR = Dir - > - - icondir = Dir
+ '                          - DINCLUDE_INSTALL_DIR = Dir - > - - includedir = Dir
+ '                          - DLIB_INSTALL_DIR = Dir - > - - libdir = Dir
+ '                          - DSBIN_INSTALL_DIR = Dir - > - - sbindir = Dir
+ '                          - DBIN_INSTALL_DIR = Dir - > - - bindir = Dir
+ '                          - DSHARE_INSTALL_DIR = Dir - > - - shared Dir $PREFIX / share
+ ' 
+ sCMAKECONF = "-DCMAKE_INSTALL_PREFIX=" & ClsBuildConf.sPrefix &
+  " -DQT_QMAKE_EXECUTABLE=" & sQMakePath
+  '" -DSYSCONF_INSTALL_DIR=" & ClsBuildConf.sSysConfDir &
+ '" -DBIN_INSTALL_DIR=" & ClsBuildConf.sBinDir & 
+ '" -DMAN_INSTALL_DIR=" & ClsBuildConf.sManDir
+  
+ ' Do some more error testing
+  IF InStr(FrmBuildView.taTerm.text, "FAILED") > 0 OR IF InStr(FrmBuildView.taTerm.text, "user request") > 0 OR ME.iBuildState = 101 THEN 
+    'STOP EVENT 
+  sShellCmd = ""
+  STOP EVENT 
+  RETURN 
+  END IF
+ME.sBuildType = "CMAKE"
+
+  SELECT CASE iBuildStep
+      CASE 1 ' Run the cmake configure
+          '/* Make sure the build dir exists
+            IF IsDir(sUntarredSrcDir &/ "build") = FALSE THEN 
+              'TRY MKDIR sUntarredSrcDir &/ "build"
+                'CATCH 
+                  SHELL "mkdir -p " & sUntarredSrcDir &/ "build"
+            END IF
+          ' /* This should already have happened, but lets just make sure it did
+          ME.SPLIT_CONFIG_OPTIONS(ClsBuildVars.sConfig)
+
+        sShellCmd = "cd " & sUntarredSrcDir &/ "build ; cmake " & sCMAKECONF & " .. || echo \'FAILED\'"
+        FrmBuildView.PbBuildProg.value = 0.25
+        MdlMain.WRITE_TO_BUILD_LOG("Running CMake configure")
+      CASE 2 ' Run make
+        sShellCmd = "cd " & sUntarredSrcDir &/ "build ; make || echo \'FAILED\'"
+        FrmBuildView.PbBuildProg.value = 0.50
+        MdlMain.WRITE_TO_BUILD_LOG("Running CMake make")
+      CASE 3 ' Make sure the PKG dir exists and run make install
+          IF IsDir(sDESTDIR) = FALSE THEN 
+            TRY MKDIR sDESTDIR
+              'CATCH 
+              IF ERROR THEN 
+                SHELL "mkdir -p " & sDESTDIR
+                END IF
+              END IF
+        sShellCmd = "cd " & sUntarredSrcDir &/ "build ; make DESDIR=" & sDESTDIR & " install || echo \'FAILED\'"
+        FrmBuildView.PbBuildProg.value = 0.75
+        MdlMain.WRITE_TO_BUILD_LOG("Running CMake make install")
+      CASE 4 ' insert description and Create the package
+      
+       ' insert the slack-desc into the package
+      IF IsDir(sLackDescDest) = FALSE THEN 
+        MKDIR sLackDescDest
+      END IF
+        ME.INSERT_DESC(ClsBuildVars.sSlackDesc, sLackDescDest)
+      
+          '/* Create the package    
+        ME.PACKAGE(sDESTDIR)
+        FrmBuildView.PbBuildProg.value = 0.95
+        MdlMain.WRITE_TO_BUILD_LOG("Creating package")
+      CASE 101 'Error code
+      sShellCmd = ""
+      STOP EVENT 
+      RETURN 
+  END SELECT 
+  
+END

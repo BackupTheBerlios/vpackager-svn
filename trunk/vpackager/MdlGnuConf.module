@@ -1,0 +1,68 @@
+' Gambas module file
+
+'    This file is part of vpackager
+
+'    vpackager is free software: you can redistribute it and/or modify
+'    it under the terms of the GNU General Public License as published by
+'    the Free Software Foundation, either version 3 of the License, or
+'    (at your option) any later version.
+
+'    vpackager  is distributed in the hope that it will be useful,
+'    but WITHOUT ANY WARRANTY; without even the implied warranty of
+'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'    GNU General Public License for more details.
+
+'    You should have received a copy of the GNU General Public License
+'    along with vpackager.  If not, see <http://www.gnu.org/licenses/>.
+
+' /* THIS MODULE CONTAINS THE GNU CONFIGURE PROCESS ONLY
+
+PUBLIC SUB RUN_CONFIG(sBuilDir AS String)
+  
+  DIM sOptions AS String
+  DIM sCFLAGS AS String
+  DIM sDoCmnd AS String
+  DIM bclear AS Boolean
+     
+  sOptions = ClsBuildVars.sConfig
+  sCFLAGS = ClsBuildVars.sCFLAGS
+    
+  IF IsDir(sBuilDir) = FALSE THEN 
+  'MKDIR sBuilDir
+  SHELL "mkdir -p " & sBuilDir WAIT 
+  ELSE IF Exist(sBuilDir) = FALSE THEN 
+  SHELL "mkdir -p " & sBuilDir WAIT 
+  END IF
+    
+  sDoCmnd = " export CFLAGS=\'" & sCFLAGS & "\' ; cd " & sBuilDir & " ; ../configure " & sOptions
+  
+  ' Set variables for script writer
+  clsGenScript.CONFIG_COMMAND = "configure"
+  clsGenScript.CONFIG_USED = ClsBuildVars.sConfig
+  
+  MdlSrcBuild.RUN_SHELL(sDoCmnd)
+  FrmBuildView.PbBuildProg.Value = 0.185
+  ' Start the monitor
+    IF MdlSrcBuild.hproc.State = Process.Running THEN 
+      REPEAT 
+        WAIT 
+      UNTIL 
+      MdlSrcBuild.hproc.State = Process.Stopped
+    END IF
+        
+    bclear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+      IF bclear = TRUE ' error in sight
+       MdlMain.WRITE_TO_BUILD_LOG(" + Error in configure process")
+       MdlSrcBuild.TOGGLE_BUILD_CANCEL(FALSE)
+       RETURN 
+      ELSE 
+        ' run make
+      MdlMain.WRITE_TO_BUILD_LOG(" + Run make")
+      FrmBuildView.PbBuildProg.Value = 0.25
+      MdlMake.RUN_MAKE(sBuilDir)
+    END IF
+  'FrmBuildView.tmGnuConf.Enabled = TRUE
+  
+  
+END
+
