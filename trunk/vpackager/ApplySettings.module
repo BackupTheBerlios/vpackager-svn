@@ -18,6 +18,7 @@
 
 
 PUBLIC SUB apply_settings()
+
 '  ME.CHECK_RIGHTS()
  'MSettings.DISPLAY_CURRENT_SETTINGS() ' Load the settings
  Global.sPackagerName = MSettings.READ_SETTINGS("PACKAGER_ID", Global.sMyname)

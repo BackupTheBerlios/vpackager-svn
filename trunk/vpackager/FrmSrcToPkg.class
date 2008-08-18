@@ -101,8 +101,23 @@ PUBLIC SUB cbSelPkgTag_Click()
 
 END
 
-PUBLIC SUB Form_Open()
+PUBLIC SUB set_default_cflags()
+  
+  DIM sDump AS String
+  SHELL "echo $CXXFLAGS" TO sDump
+  sDump = Trim(sDump)
+  IF sDump <> "" THEN 
+    ClsBuildVars.sCFLAGS = "-O2 " & sDump
+  ELSE 
+    ClsBuildVars.sCFLAGS = "-O2 -march=i586 -mtune=i686"
+  END IF
+  
+END
 
+
+
+PUBLIC SUB Form_Open()
+  ME.set_default_cflags()
   ME.LOAD_FORM_DEFAUTLS()
   ME.DISABLE_CONTROLS()
   ' retreive and apply window attributes

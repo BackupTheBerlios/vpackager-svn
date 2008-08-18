@@ -1,0 +1,24 @@
+# Gambas Project File 2.0
+Title=vpackager
+Startup=StartUp
+Icon=Graphics/logo_sm.png
+Version=1.0.14
+Library=gb.gui
+Library=gb.form
+Library=gb.image
+Library=gb.settings
+Description=Vector Linux Package builder utility\nThis program provides a GUI front end to automate the process of building software from source.
+Authors=Moises Henriquez [M0E.lnx@gmail.com]\nEasuter [easuter@gmail.com]\nUelsk8s [uelsk8s@gmail.com]
+TabSize=2
+Translate=1
+Language=en_US
+ControlPublic=1
+ModulePublic=1
+Maintainer=M0E-lnx
+Address=M0E.lnx@gmail.com
+License=General Public Licence
+UseRelease=1
+Systems=autotools
+Menus=
+Categories=
+Groups=

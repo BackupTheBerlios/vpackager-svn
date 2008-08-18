@@ -17,6 +17,9 @@
 
 ' /* The package procedure will be shared between the GNU and CMAKE build types
 
+
+
+
 PUBLIC SUB PACKAGE(sPkgdir AS String)
   
    DIM sShellcmd AS String
@@ -28,9 +31,33 @@ PUBLIC SUB PACKAGE(sPkgdir AS String)
    DIM sVer AS String = ClsBuildVars.sVersion
    DIM sTag AS String = ClsBuildVars.sTag
    DIM sDescDest AS String = sPkgdir &/ "install"
-   
-   clsGenScript.PACKAGE_COMMAND = "makeslapt --tlz "
-  sShellcmd = "cd " & sPkgDir & " ; makeslapt --" & sPkgtype & " " & sName & "-" & sVer & "-" & sArch & "-" & sRel & sTag & "." & sPkgtype
+   DIM sPkgTrget AS String = sName & "-" & sVer & "-" & sArch & "-" & sRel & sTag & "." & sPkgtype
+   'clsGenScript.PACKAGE_COMMAND = "makeslapt --tlz "
+  'sShellcmd = "cd " & sPkgDir & " ; makeslapt --" & sPkgtype & " " & sName & "-" & sVer & "-" & sArch & "-" & sRel & sTag & "." & sPkgtype
+  
+  ' run dependancy check with requiredbuilder
+  TRY MKDIR sDescDest
+    MdlMain.WRITE_TO_BUILD_LOG("Generating list of dependancies ... ")
+      sShellcmd = "cd " & sPkgdir & "; requiredbuilder -v -y -s " & sDescDest
+    MdlSrcBuild.RUN_SHELL(sShellcmd)
+      IF MdlSrcBuild.hproc.State = Process.running THEN 
+        REPEAT 
+          WAIT 
+        UNTIL 
+        MdlSrcBuild.hproc.state = Process.Stopped
+      END IF
+  sClear = MdlSrcBuild.ERROR_TEST("FAILED", FrmBuildView.taTerm.Text)
+    'MdlSrcBuild.iStepInProcedure = 5
+    FrmBuildView.PbBuildProg.Value = 1
+        
+      IF sClear = TRUE THEN 
+        MdlMain.WRITE_TO_BUILD_LOG("Error while generating dependancy information for this package.")
+        RETURN ' STOP HERE.... NOT CLEAR
+      END IF
+  
+  sShellcmd = "cd " & sPkgdir & ";makepkg -l y -c n " & sPkgTrget
+      
+  
   
   IF IsDir(sDescDest) = FALSE THEN 
     MKDIR sDescDest
