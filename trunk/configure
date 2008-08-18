@@ -1960,7 +1960,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=vpackager
- VERSION=1.0.14
+ VERSION=1.0.17
 
 
 cat >>confdefs.h <<_ACEOF

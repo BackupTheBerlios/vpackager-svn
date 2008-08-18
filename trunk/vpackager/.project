@@ -2,7 +2,7 @@
 Title=vpackager
 Startup=StartUp
 Icon=Graphics/logo_sm.png
-Version=1.0.14
+Version=1.0.17
 Library=gb.gui
 Library=gb.form
 Library=gb.image

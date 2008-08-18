@@ -1,3 +1,8 @@
+* Mon Aug 18 2008 M0E-lnx <M0E.lnx@gmail.com> 
+- Some Bugs. See http://vpackager.berlios.de for details
+- Changed code to use requiredbuilder instead of makeslapt
+- Pulls CFLAGS from ~/.bashrc instead of hard coded value
+
 * Mon Jun 23 2008 M0E-lnx <M0E.lnx@gmail.com> 
 - Changed the structure of the src directory to make room for gnu tools build system.
 - This will allow vpackager to be built / installed in other systems
