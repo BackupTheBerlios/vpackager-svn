@@ -108,6 +108,8 @@ IF Exist(sPackPath) = TRUE THEN
   CASE 2 ' User chose to save the package... it will be saved in the same directory as it's source tarball
     message.Info("Your " & ClsBuildVars.sName & "-" & ClsBuildVars.sversion & " package will be saved to " & gb.NewLine &
     file.Dir(ClsBuildVars.sSrcPath) &/ file.Name(sPackPath))
+    TRY COPY sPackPath TO file.Dir(clsBuildVars.sSrcPath) &/ file.Name(sPackPath)
+      IF ERROR THEN message(Error.text & gb.newline & Error.where)
   END SELECT 
 ELSE 
 ' Package not found in its place... something went wrong

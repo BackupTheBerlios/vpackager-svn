@@ -38,7 +38,8 @@ PUBLIC SUB PACKAGE(sPkgdir AS String)
   ' run dependancy check with requiredbuilder
   TRY MKDIR sDescDest
     MdlMain.WRITE_TO_BUILD_LOG("Generating list of dependancies ... ")
-      sShellcmd = "cd " & sPkgdir & "; requiredbuilder -v -y -s " & sDescDest
+      sShellcmd = "requiredbuilder -v -y -s " & ClsGlobal.sTMP_DIR &/ sName &/ sVer &/ "build" & Space(1) & File.Dir(sDescDest)
+      MdlMain.WRITE_TO_BUILD_LOG(sShellcmd)
     MdlSrcBuild.RUN_SHELL(sShellcmd)
       IF MdlSrcBuild.hproc.State = Process.running THEN 
         REPEAT 
