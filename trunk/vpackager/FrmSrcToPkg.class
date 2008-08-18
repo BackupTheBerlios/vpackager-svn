@@ -25,6 +25,7 @@ ME.Hide
 FrmBuildView.Show
 'MdlBuild.EXTRACT_SRC(ClsBuildVars.sSrcPath)
 'MdlExtract.EXTRACT_SRC(ClsBuildVars.sSrcPath)
+ClsBuildVars.sCFLAGS = ME.txtCFlags.Text
 IF ME.txtSlackDescPath.Text <> "" THEN 
   ClsBuildVars.sSlackDesc = Trim(ME.txtSlackDescPath.text)
   ClsBuildVars.bhasDesc = TRUE
@@ -310,5 +311,11 @@ WAIT 0.2
    ME.Resize(Desktop.Width, 414)
   END IF
 ME.Refresh()
+
+END
+
+PUBLIC SUB txtCFlags_KeyRelease()
+
+  ClsBuildVars.sCFLAGS = ME.txtCFlags.Text
 
 END
